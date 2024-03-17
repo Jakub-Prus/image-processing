@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGIMP</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/base-min.css">
+  <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+  <div class="top-menu">
+      <div class="dropdown">
+          <button class="dropbtn">File</button>
+          <div class="dropdown-content">
+              <a href="#">New</a>
+              <a id="load-image-btn" href="#">Open</a>
+              <a href="#">Save</a>
+          </div>
+      </div>
+      <div class="dropdown">
+          <button class="dropbtn">Edit</button>
+          <div class="dropdown-content">
+              <a href="#">Undo</a>
+              <a href="#">Redo</a>
+          </div>
+      </div>
+  </div>
+
+  <div class="workspace">
+
+    <!-- Tools menu with only icon -->
+    <div class="tools-menu">
+      <div class="tools-row">
+        <img class="tool-icon" src="assets/icons/zoom-in.png" alt="Tool Zoom In">
+        <img class="tool-icon" src="assets/icons/zoom-out.png" alt="Tool Zoom Out">
+      </div>
+      <div class="tools-row">
+        <button id="negative-filter-btn" class="tool-button">Negative</button>
+      </div>
+      <div class="tools-row">
+        <button id="grayscale-filter-btn" class="tool-button">Grayscale</button>
+      </div>
+      <div class="tool-icon"></div>
+      <!-- Add more tool icons as needed -->
+    </div>
+    
+    
+    <canvas id="canvas" width="512" height="512"></canvas>
+  </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
