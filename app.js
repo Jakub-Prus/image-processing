@@ -78,7 +78,7 @@ class Canvas {
     this.canvas.width = window.innerWidth - parseInt(getComputedStyle(document.body).getPropertyValue('--tools-menu-width'));
     this.canvas.height = window.innerHeight - parseInt(getComputedStyle(document.body).getPropertyValue('--top-menu-height'));
     (() => {
-      var img = new Image();
+      const img = new Image();
       img.onload = function(){
         this.ctx.drawImage(img, 0, 0);
       };
@@ -87,7 +87,7 @@ class Canvas {
   }
   
   setupResizeHandler() {
-    window.addEventListener('resize', this.resizeCanvas.bind(this));
+    window.addEventListener('resize', this.resizeCanvas());
   }
 
   getImageData() {
@@ -114,9 +114,10 @@ class Filter {
     const { tempImageData, data, tempData } = this.generateImageData();
 
     for (let i = 0; i < data.length; i += 4) {
-      tempData[i] = data[i] * 0.3;          // Red component
-      tempData[i + 1] = data[i + 1] * 0.6;  // Green component
-      tempData[i + 2] = data[i + 2] * 0.1;  // Blue component
+      const grayscaleValue = 0.299 * data[i] +  0.587 * data[i + 1] + 0.114 * data[i + 2];
+      tempData[i] = grayscaleValue;          // Red component
+      tempData[i + 1] = grayscaleValue;  // Green component
+      tempData[i + 2] = grayscaleValue;  // Blue component
       tempData[i + 3] = data[i + 3];        // Alpha component
     }
     
@@ -125,7 +126,6 @@ class Filter {
 
   negative() {
     const { tempImageData, data, tempData } = this.generateImageData();
-    console.log(data);
 
     for (let i = 0; i < data.length; i += 4) {
       tempData[i] = 255 - data[i];          // Red component
@@ -147,7 +147,7 @@ class Filter {
     const data = imageData.data;
     const tempData = tempImageData.data;
 
-    return tempImageData, data, tempData
+    return {tempImageData, data, tempData}
   }
 }
 
@@ -174,7 +174,7 @@ class Menu {
     const negativeBtn = document.getElementById('negative-filter-btn');
     negativeBtn.addEventListener('click', () => this.filter.negative());
 
-    const grayscaleBtn = document.getElementById('negative-filter-btn');
+    const grayscaleBtn = document.getElementById('grayscale-filter-btn');
     grayscaleBtn.addEventListener('click', () => this.filter.grayscale());
   }
 
