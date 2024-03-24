@@ -21,8 +21,9 @@ body{
 }
 
 
-.tools-menu {
+.menu {
     width: var(--tools-menu-width);
+    height: 100%;
     padding: 10px;
     display: flex;
     background-color: #e0e0e0;
@@ -122,4 +123,28 @@ canvas {
     border: 2px solid black;
     margin-right: 1px;
     margin-bottom: 4px;
+}
+
+.detail{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.detail-range{
+    width: 80px;
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+}
+
+.range-value {
+    margin-left: 6px;
+}
+
+.detail-title{
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }

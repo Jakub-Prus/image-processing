@@ -79,7 +79,7 @@ class Canvas {
     this.canvas.height = window.innerHeight - parseInt(getComputedStyle(document.body).getPropertyValue('--top-menu-height'));
     (() => {
       const img = new Image();
-      img.onload = function(){
+      img.onload = () => {
         this.ctx.drawImage(img, 0, 0);
       };
       img.src = snapshot;
@@ -163,6 +163,7 @@ class Menu {
   setupMenu() {
     this.setupEventListenersForTopMenu();
     this.setupEventListenersForToolsMenu();
+    this.setupEventListenersForDetailsMenu();
   }
   
   setupEventListenersForTopMenu() {
@@ -176,6 +177,29 @@ class Menu {
 
     const grayscaleBtn = document.getElementById('grayscale-filter-btn');
     grayscaleBtn.addEventListener('click', () => this.filter.grayscale());
+  }
+
+  setupEventListenersForDetailsMenu() {
+    const contrastRange = document.getElementById('contrast-range');
+    const contrastValue = document.getElementById('contrast-value');
+    contrastValue.textContent = contrastRange.value;
+    contrastRange.addEventListener("input", (event) => {
+      contrastValue.textContent = event.target.value;
+    });
+
+    const brightnessRange = document.getElementById('brightness-range');
+    const brightnessValue = document.getElementById('brightness-value');
+    brightnessValue.textContent = brightnessRange.value;
+    brightnessRange.addEventListener("input", (event) => {
+      brightnessValue.textContent = event.target.value;
+    });
+
+    const gammaRange = document.getElementById('gamma-range');
+    const gammaValue = document.getElementById('gamma-value');
+    gammaValue.textContent = gammaRange.value;
+    gammaRange.addEventListener("input", (event) => {
+      gammaValue.textContent = event.target.value;
+    });
   }
 
   loadImage() {
