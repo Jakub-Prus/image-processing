@@ -40,7 +40,7 @@
         <button id="grayscale-filter-btn" class="tool-button">Grayscale</button>
       </div>
       <div class="tools-row">
-        <button id="correction-btn" class="tool-button">Correction</button>
+        <button id="correction-btn" class="tool-button">Corrections</button>
       </div>
     </div>
     
@@ -51,21 +51,23 @@
         <div class="detail brightness">
           <label class="detail-title">Brightness</label> 
           <div class="detail-range">
-            <input id="brightness-range" type="range" min="0" value="0" max="100" step="1">
+            <input id="brightness-range" type="range" min="-100" value="0" max="100" step="1">
             <span id="brightness-value" class="range-value">0</span>
           </div>
         </div>
         <div class="detail contrast">
           <label class="detail-title">Contrast</label> 
           <div class="detail-range">
-            <input id="contrast-range" type="range" min="0" value="0" max="1" step="0.01">
+            <input id="contrast-range" type="range" min="0" value="1" max="2" step="0.01">
+            <!-- TODO check values range -->
             <span id="contrast-value" class="range-value">0</span>
           </div>
         </div>
         <div class="detail gamma">
           <label class="detail-title">Gamma</label> 
           <div class="detail-range">
-            <input id="gamma-range" type="range" min="0" value="0" max="100" step="1">
+            <input id="gamma-range" type="range" min="0" value="1" max="2" step="0.01">  
+            <!-- TODO check values range -->
             <span id="gamma-value" class="range-value">0</span>
           </div>
         </div>

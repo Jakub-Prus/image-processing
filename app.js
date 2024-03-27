@@ -1,9 +1,16 @@
+const CORRECTIONSENUM = {
+  brightness: 'brightness',
+  contrast: 'contrast',
+  gamma: 'gamma',
+
+}
+
 class App {
   constructor() {
     this.canvas = new Canvas();
     this.brush = new Brush(this.canvas.getCanvas(), this.canvas.getContext());
-    this.filter = new Filter(this.canvas.getCanvas(), this.canvas.getContext())
-    this.menu = new Menu(this.canvas.getCanvas(), this.canvas.getContext(), this.filter)
+    this.filter = new Filter(this.canvas, this.canvas.getContext())
+    this.menu = new Menu(this.canvas, this.canvas.getContext(), this.filter)
   }
 
 
@@ -64,6 +71,7 @@ class Canvas {
     this.ctx;
     this.setupCanvas(); 
     this.setupResizeHandler();
+    this.originalImageData = null;
   }
   
   setupCanvas() {
@@ -101,13 +109,36 @@ class Canvas {
     return this.canvas;
   }
 
-  
+  loadImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (event) => {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+          this.originalImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
 }
 
 class Filter {
   constructor(canvas, context) {
     this.canvas = canvas;
     this.ctx = context;
+    this.corrections = {
+      brightness: 0,
+      contrast: 0,
+      gamma: 0,
+    }
   }
 
   grayscale() {
@@ -137,13 +168,67 @@ class Filter {
     this.applyFilterToCurrentCanvas(tempImageData);
   }
 
+  applyCorrections() {
+    const originalImageData = this.canvas.originalImageData.data;
+    const { tempImageData, data, tempData } = this.generateImageData();
+    
+    const lookUpTable = this.createLookUpTable(this.corrections);
+
+    for (let i = 0; i < data.length; i += 4) {
+      tempData[i] = lookUpTable[originalImageData[i]];           // Red component
+      tempData[i + 1] = lookUpTable[originalImageData[i + 1]];   // Green component
+      tempData[i + 2] = lookUpTable[originalImageData[i + 2]];   // Blue component
+      tempData[i + 3] = lookUpTable[originalImageData[i + 3]];   // Alpha component
+    }
+    
+    this.applyFilterToCurrentCanvas(tempImageData);
+  }
+
   applyFilterToCurrentCanvas(newImageData) {
     this.ctx.putImageData(newImageData, 0, 0);
   }
 
+  createLookUpTable(values) {
+    console.log('values', values)
+    const lookUpTable = [...Array(255 - 0 + 1).keys()].map(x => x + 0) // TODO change to clampedArray
+    console.log('lookUpTable', lookUpTable)
+    let modifiedLookUpTable = [];
+
+    for (const [operation, value] of Object.entries(values)) {
+      console.log(`${operation}: ${value}`);
+      if(value === 0) continue;
+      switch (operation) {
+        case CORRECTIONSENUM.brightness:
+            modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
+              const newValue = lookUpTableValue + value;
+              return Math.min(Math.max(newValue, 0), 255)
+            });
+            break;
+        case CORRECTIONSENUM.contrast:
+          modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
+            const newValue = lookUpTableValue * value;
+            return Math.min(Math.max(newValue, 0), 255)
+          });
+          break;
+        case CORRECTIONSENUM.gamma:
+          modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
+            const newValue = Math.pow(lookUpTableValue * value);
+            console.log('newValue', newValue)
+            return Math.min(Math.max(newValue, 0), 255) // TODO check if it even works
+          });
+          break;
+            
+            default:
+              break;
+            }
+          }
+    console.log('modifiedLookUpTable', modifiedLookUpTable)
+    return modifiedLookUpTable.map(x => parseInt(x))
+  }
+
   generateImageData() {
-    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    const tempImageData = new ImageData(this.canvas.width, this.canvas.height);
+    const imageData = this.ctx.getImageData(0, 0, this.canvas.getCanvas().width, this.canvas.getCanvas().height);
+    const tempImageData = new ImageData(this.canvas.getCanvas().width, this.canvas.getCanvas().height);
     const data = imageData.data;
     const tempData = tempImageData.data;
 
@@ -168,7 +253,7 @@ class Menu {
   
   setupEventListenersForTopMenu() {
     const loadImageBtn = document.getElementById('load-image-btn');
-    loadImageBtn.addEventListener('click', () => this.loadImage());
+    loadImageBtn.addEventListener('click', () => this.canvas.loadImage());
   }
 
   setupEventListenersForToolsMenu() {
@@ -180,13 +265,6 @@ class Menu {
   }
 
   setupEventListenersForDetailsMenu() {
-    const contrastRange = document.getElementById('contrast-range');
-    const contrastValue = document.getElementById('contrast-value');
-    contrastValue.textContent = contrastRange.value;
-    contrastRange.addEventListener("input", (event) => {
-      contrastValue.textContent = event.target.value;
-    });
-
     const brightnessRange = document.getElementById('brightness-range');
     const brightnessValue = document.getElementById('brightness-value');
     brightnessValue.textContent = brightnessRange.value;
@@ -194,36 +272,49 @@ class Menu {
       brightnessValue.textContent = event.target.value;
     });
 
+    brightnessRange.addEventListener("change", (event) => {
+      this.filter.corrections.brightness = parseFloat(event.target.value);
+      this.filter.applyCorrections();
+    });
+
+
+    const contrastRange = document.getElementById('contrast-range');
+    const contrastValue = document.getElementById('contrast-value');
+    contrastValue.textContent = contrastRange.value;
+    contrastRange.addEventListener("input", (event) => {
+      contrastValue.textContent = event.target.value;
+    });
+
+    contrastRange.addEventListener("change", (event) => {
+      this.filter.corrections.contrast = parseFloat(event.target.value);
+      this.filter.applyCorrections();
+    });
+
     const gammaRange = document.getElementById('gamma-range');
     const gammaValue = document.getElementById('gamma-value');
     gammaValue.textContent = gammaRange.value;
-    gammaRange.addEventListener("input", (event) => {
+    gammaRange.addEventListener("click", (event) => {
       gammaValue.textContent = event.target.value;
     });
+
+    gammaRange.addEventListener("change", (event) => {
+      this.filter.corrections.gamma = parseFloat(event.target.value);
+      this.filter.applyCorrections();
+    });
+
+    const applyCorrectionsBtn = document.getElementById('apply-corrections-btn');
+    applyCorrectionsBtn.addEventListener("click", (event) => this.filter.applyCorrections(contrastRange.value, brightnessRange.value, gammaRange.value));
   }
 
-  loadImage() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (event) => {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
-  }
 
   
 }
 
 window.onload = function() {
   const app = new App();
+};
+
+
+const clamp = (value, min, max) => {
+  return Math.min(Math.max(value, min), max);
 };
