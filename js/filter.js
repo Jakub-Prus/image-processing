@@ -11,7 +11,13 @@ export default class Filter {
       }
     }
   
-    grayscale() { // TODO Add reverse grayscale to go back from grayscale
+    grayscale() {
+      if(this.canvas.isGrayscale === true) {
+        this.applyFilterToCurrentCanvas(this.canvas.originalImageData);
+        this.canvas.isGrayscale = false;
+        return
+
+      }
       const { tempImageData, data, tempData } = this.generateImageData();
   
       for (let i = 0; i < data.length; i += 4) {
@@ -21,8 +27,8 @@ export default class Filter {
         tempData[i + 2] = grayscaleValue;  // Blue component
         tempData[i + 3] = data[i + 3];        // Alpha component
       }
-      
       this.applyFilterToCurrentCanvas(tempImageData);
+      this.canvas.isGrayscale = true;
     }
   
     negative() {
@@ -127,3 +133,5 @@ export default class Filter {
       return {tempImageData, data, tempData}
     }
   }
+
+  //TODO add some logic into applying filters and corrections

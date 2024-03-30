@@ -1,8 +1,12 @@
+
 export default class Menu {
-    constructor(canvas, context, filter) {
+    constructor(canvas, context, filter, histogram) {
       this.canvas = canvas;
       this.ctx = context;
       this.filter = filter;
+      this.histogram = histogram;
+      this.detailsVisible = false;
+      this.histogramVisible = false;
   
       this.setupMenu();
     }
@@ -11,6 +15,7 @@ export default class Menu {
       this.setupEventListenersForTopMenu();
       this.setupEventListenersForToolsMenu();
       this.setupEventListenersForDetailsMenu();
+      this.setupEventListenersForHistogram()
     }
     
     setupEventListenersForTopMenu() {
@@ -27,7 +32,51 @@ export default class Menu {
   
       const grayscaleBtn = document.getElementById('grayscale-filter-btn');
       grayscaleBtn.addEventListener('click', () => this.filter.grayscale());
+
+      const correctionBtn = document.getElementById('correction-filter-btn');
+      const correctionMenu = document.getElementById('correction-details');
+      correctionBtn.addEventListener('click', () => {
+        this.detailsVisible = !this.detailsVisible;
+        correctionMenu.style.display = this.detailsVisible ? 'block' : 'none';
+      });
+
+      const histogramBtn = document.getElementById('histogram-btn');
+      const histogram = document.getElementById('histogram');
+      histogramBtn.addEventListener('click', () => {
+        this.histogramVisible = !this.histogramVisible;
+        histogram.style.display = this.histogramVisible ? 'flex' : 'none';
+        this.histogram.update([]);
+      });
     }
+
+    setupEventListenersForHistogram() {
+      const channelButtons = document.querySelectorAll('.channelButton');
+
+      channelButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const channel = button.getAttribute('data-channel');
+          const isClicked = button.classList.contains('clicked');
+          
+          if (isClicked) {
+            button.classList.remove('clicked');
+          } else {
+            button.classList.add('clicked');
+          }
+
+    // Get all clicked buttons
+    const clickedButtons = Array.from(channelButtons).filter(btn => btn.classList.contains('clicked'));
+    // Extract channels from clicked buttons
+    const avoidedChannels = clickedButtons.map(btn => btn.getAttribute('data-channel'));
+
+    // Update histogram
+    console.log('avoidedChannels', avoidedChannels)
+    this.histogram.update(avoidedChannels);
+  });
+});
+
+    }
+
+    
   
     setupEventListenersForDetailsMenu() {
       const brightnessRange = document.getElementById('brightness-range');

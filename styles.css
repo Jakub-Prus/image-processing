@@ -125,6 +125,10 @@ canvas {
     margin-bottom: 4px;
 }
 
+.correction-details {
+    display: none;
+}
+
 .detail{
     width: 100%;
     display: flex;
@@ -148,3 +152,35 @@ canvas {
     display: flex;
     justify-content: center;
 }
+
+.histogram {
+    width: 380px;
+    height: 380px;
+    position: absolute;
+    left: 15%;
+    top:30%;
+    background-color: #f0f0f0;;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    display: none;
+    border: solid;
+}
+
+#canvasHistogram {
+    width: 256px;
+    height: 256px; /* Adjust height as needed */
+    background-color: #f0f0f0;
+    padding: 20px;
+  }
+
+  .channelButton {
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  .channelButton.clicked {
+    text-decoration: line-through;
+  }
+  

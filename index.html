@@ -40,14 +40,17 @@
         <button id="grayscale-filter-btn" class="tool-button">Grayscale</button>
       </div>
       <div class="tools-row">
-        <button id="correction-btn" class="tool-button">Corrections</button>
+        <button id="correction-filter-btn" class="tool-button">Corrections</button>
+      </div>
+      <div class="tools-row">
+        <button id="histogram-btn" class="tool-button">Histogram</button>
       </div>
     </div>
     
     <canvas id="canvas" width="512" height="512"></canvas>
 
     <div class="menu details">
-      <div class="details-row correction-details">
+      <div id="correction-details" class="details-row correction-details">
         <div class="detail brightness">
           <label class="detail-title">Brightness</label> 
           <div class="detail-range">
@@ -70,6 +73,16 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="histogram" class="histogram">
+    <canvas id="canvasHistogram" width="256" height="256"></canvas>
+    <div>
+      <button id="avoidRed" class="channelButton" data-channel="R">Red</button>
+      <button id="avoidGreen" class="channelButton" data-channel="G">Green</button>
+      <button id="avoidBlue" class="channelButton" data-channel="B">Blue</button>
+      <button id="avoidLuminosity" class="channelButton" data-channel="L">Luminosity</button>
     </div>
   </div>
 

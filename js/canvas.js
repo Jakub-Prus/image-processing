@@ -5,6 +5,7 @@ export default class Canvas {
       this.setupCanvas(); 
       this.setupResizeHandler();
       this.originalImageData = null;
+      this.isGrayscale = false;
     }
     
     setupCanvas() {
@@ -54,6 +55,7 @@ export default class Canvas {
           img.onload = () => {
             this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
             this.originalImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            this.isGrayscaleFunc(this.originalImageData);
           };
           img.src = reader.result;
         };
@@ -61,4 +63,19 @@ export default class Canvas {
       };
       input.click();
     }
+
+    isGrayscaleFunc(imageData) {
+      for (let i = 0; i < imageData.data.length; i += 4) {
+          const r = imageData.data[i];
+          const g = imageData.data[i + 1];
+          const b = imageData.data[i + 2];
+          if (r !== g || r !== b || g !== b) {
+            this.isGrayscale = false;
+            return
+          }
+      }
+      this.isGrayscale = true; 
+      return
+  }
+  
   }
