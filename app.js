@@ -190,7 +190,7 @@ class Filter {
 
   createLookUpTable(values) {
     console.log('values', values)
-    const lookUpTable = [...Array(255 - 0 + 1).keys()].map(x => x + 0) // TODO change to clampedArray
+    const lookUpTable = new Uint8ClampedArray(Array.from({ length: 256 }, (_, index) => index));
     console.log('lookUpTable', lookUpTable)
     let modifiedLookUpTable = [];
 
@@ -199,29 +199,51 @@ class Filter {
       if(value === 0) continue;
       switch (operation) {
         case CORRECTIONSENUM.brightness:
+          if(modifiedLookUpTable.length === 0){
             modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
               const newValue = lookUpTableValue + value;
-              return Math.min(Math.max(newValue, 0), 255)
+              return newValue
             });
-            break;
+          } else {
+            modifiedLookUpTable = modifiedLookUpTable.map(lookUpTableValue => {
+              const newValue = lookUpTableValue + value;
+              return newValue
+            });
+          }
+          break;
         case CORRECTIONSENUM.contrast:
-          modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
-            const newValue = lookUpTableValue * value;
-            return Math.min(Math.max(newValue, 0), 255)
-          });
+          if(modifiedLookUpTable.length === 0){
+            modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
+              const newValue = lookUpTableValue * (value);
+              return newValue
+            });
+          } else {
+            modifiedLookUpTable = modifiedLookUpTable.map(lookUpTableValue => {
+              const newValue = lookUpTableValue * (value);
+              return newValue
+            });
+          }
           break;
         case CORRECTIONSENUM.gamma:
-          modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
-            const newValue = Math.pow(lookUpTableValue * value);
-            console.log('newValue', newValue)
-            return Math.min(Math.max(newValue, 0), 255) // TODO check if it even works
-          });
+          if(modifiedLookUpTable.length === 0){
+            modifiedLookUpTable = lookUpTable.map(lookUpTableValue => {
+              const newValue = Math.pow(lookUpTableValue, value);
+              console.log('newValue', newValue)
+              return newValue // TODO check if it even works
+            });
+          } else {
+            modifiedLookUpTable = modifiedLookUpTable.map(lookUpTableValue => {
+              const newValue = Math.pow(lookUpTableValue, value);
+              console.log('newValue', newValue)
+              return newValue // TODO check if it even works
+            });
+          }
           break;
             
-            default:
-              break;
-            }
-          }
+        default:
+          break;
+      }
+    }
     console.log('modifiedLookUpTable', modifiedLookUpTable)
     return modifiedLookUpTable.map(x => parseInt(x))
   }
@@ -253,7 +275,10 @@ class Menu {
   
   setupEventListenersForTopMenu() {
     const loadImageBtn = document.getElementById('load-image-btn');
-    loadImageBtn.addEventListener('click', () => this.canvas.loadImage());
+    loadImageBtn.addEventListener('click', () => {
+      this.canvas.loadImage();
+      this.defaultStateOfCorrections()
+    });
   }
 
   setupEventListenersForToolsMenu() {
@@ -293,7 +318,7 @@ class Menu {
     const gammaRange = document.getElementById('gamma-range');
     const gammaValue = document.getElementById('gamma-value');
     gammaValue.textContent = gammaRange.value;
-    gammaRange.addEventListener("click", (event) => {
+    gammaRange.addEventListener("input", (event) => {
       gammaValue.textContent = event.target.value;
     });
 
@@ -301,9 +326,23 @@ class Menu {
       this.filter.corrections.gamma = parseFloat(event.target.value);
       this.filter.applyCorrections();
     });
+  }
 
-    const applyCorrectionsBtn = document.getElementById('apply-corrections-btn');
-    applyCorrectionsBtn.addEventListener("click", (event) => this.filter.applyCorrections(contrastRange.value, brightnessRange.value, gammaRange.value));
+  defaultStateOfCorrections() {
+    document.getElementById('brightness-range').value = 0;
+    document.getElementById('brightness-value').textContent = 0;
+
+    document.getElementById('contrast-range').value = 1;
+    document.getElementById('contrast-value').textContent = 1;
+
+    document.getElementById('gamma-range').value = 1;
+    document.getElementById('gamma-value').textContent = 1;
+
+    for (const key in this.filter.corrections) {
+      if (Object.hasOwnProperty.call(this.filter.corrections, key)) {
+        this.filter.corrections[key] = 0;
+      }
+    }    
   }
 
 
