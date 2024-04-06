@@ -1,24 +1,23 @@
 export default class Histogram {
-  constructor(canvas) {
+  constructor(canvas, ctx) {
       this.canvas = canvas;
-      this.L = new Array(256).fill(0);
+      this.ctx = ctx;
+      this.A = new Array(256).fill(0);
       this.R = new Array(256).fill(0);
       this.G = new Array(256).fill(0);
       this.B = new Array(256).fill(0);
       this.avoidedChannels = []
   }
 
-  update(avoidedChannel) {
+  update(avoidedChannel = []) {
     this.avoidedChannels = avoidedChannel;
     this.generate(this.canvas.getImageData(), this.canvas.isGrayscale);
   }
 
   generate(imgData, isGrayscale) {
-  const width = imgData.width;
-  const height = imgData.height;
   const src = new Uint32Array(imgData.data.buffer);
 
-  this.L.fill(0);
+  this.A.fill(0);
   this.R.fill(0);
   this.G.fill(0);
   this.B.fill(0);
@@ -32,17 +31,17 @@ export default class Histogram {
     if (!this.avoidedChannels.includes('G')) this.G[g]++;
     if (!this.avoidedChannels.includes('B')) this.B[b]++;
     if (!this.avoidedChannels.includes('L')) {
-      this.L[r]++;
-      this.L[g]++;
-      this.L[b]++;
+      this.A[r]++;
+      this.A[g]++;
+      this.A[b]++;
     }
   }
   
   let maxBrightness = 0;
   if (isGrayscale) {
       for (let i = 1; i < 256; i++) {
-      if (maxBrightness < this.L[i]) {
-          maxBrightness = this.L[i];
+      if (maxBrightness < this.A[i]) {
+          maxBrightness = this.A[i];
       }
       }
   } else {
@@ -74,7 +73,7 @@ export default class Histogram {
       ctx.strokeStyle = "#000000";
       ctx.beginPath();
       ctx.moveTo(x, startY);
-      ctx.lineTo(x, startY - this.L[i] * dy);
+      ctx.lineTo(x, startY - this.A[i] * dy);
       ctx.closePath();
       ctx.stroke();
       } else {
@@ -109,6 +108,57 @@ export default class Histogram {
       ctx.stroke();
     }
   }
+
+  stretching() {
+    const isGrayscale = this.canvas.isGrayscale;
+    const currentImageData = this.ctx.getImageData(0, 0, this.canvas.getCanvas().width, this.canvas.getCanvas().height);
+    const stretchedImgData = new ImageData(this.canvas.getCanvas().width, this.canvas.getCanvas().height);
+
+    if(isGrayscale){
+      const edges = this._findEdgesOfChannel(this.A)
+      for (let i = 0; i < currentImageData.data.length; i += 4) {
+        stretchedImgData.data[i] = (255 / (edges.max - edges.min)) * (currentImageData.data[i] - edges.min);             // Red component
+        stretchedImgData.data[i + 1] = (255 / (edges.max - edges.min)) * (currentImageData.data[i + 1] - edges.min);     // Green component
+        stretchedImgData.data[i + 2] = (255 / (edges.max - edges.min)) * (currentImageData.data[i + 2] - edges.min);     // Blue component
+        stretchedImgData.data[i + 3] = (255 / (edges.max - edges.min)) * (currentImageData.data[i + 3] - edges.min);     // Alpha component
+      }
+    } else {
+      const edgesR = this._findEdgesOfChannel(this.R)
+      const edgesG = this._findEdgesOfChannel(this.G)
+      const edgesB = this._findEdgesOfChannel(this.B)
+      const edgesA = this._findEdgesOfChannel(this.A)
+
+      for (let i = 0; i < currentImageData.data.length; i += 4) {
+        stretchedImgData.data[i] = (255 / (edgesR.max - edgesR.min)) * (currentImageData.data[i] - edgesR.min);             // Red component
+        stretchedImgData.data[i + 1] = (255 / (edgesG.max - edgesG.min)) * (currentImageData.data[i + 1] - edgesG.min);     // Green component
+        stretchedImgData.data[i + 2] = (255 / (edgesB.max - edgesB.min)) * (currentImageData.data[i + 2] - edgesB.min);     // Blue component
+        stretchedImgData.data[i + 3] = (255 / (edgesA.max - edgesA.min)) * (currentImageData.data[i + 3] - edgesA.min);     // Alpha component
+      }
+    }
+    this.canvas.applyImageDataToCurrentCanvas(stretchedImgData);
+    this.update()
+}
+
+  _findEdgesOfChannel(channel) {
+    let min = 0;
+    let max = 255;
+    for (let i = 0; i < 256; i++) {
+        if (channel[i] !== 0) {
+            min = i;
+            break;
+        }
+    }
+    for (let i = 255; i >= 0; i--) {
+        if (channel[i] !== 0) {
+            max = i;
+            break;
+        }
+    }
+
+    return {min, max}
+  }
+
+
 }
 
 

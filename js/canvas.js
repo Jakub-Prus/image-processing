@@ -42,6 +42,10 @@ export default class Canvas {
     getCanvas() {
       return this.canvas;
     }
+
+    applyImageDataToCurrentCanvas(newImageData) {
+      this.ctx.putImageData(newImageData, 0, 0);
+    }
   
     loadImage() {
       const input = document.createElement('input');

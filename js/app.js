@@ -10,7 +10,7 @@ class App {
     this.canvas = new Canvas();
     this.brush = new Brush(this.canvas.getCanvas(), this.canvas.getContext());
     this.filter = new Filter(this.canvas, this.canvas.getContext())
-    this.histogram = new Histogram(this.canvas);
+    this.histogram = new Histogram(this.canvas, this.canvas.getContext());
     this.menu = new Menu(this.canvas, this.canvas.getContext(), this.filter, this.histogram);
   }
 }

@@ -47,6 +47,10 @@ export default class Menu {
         histogram.style.display = this.histogramVisible ? 'flex' : 'none';
         this.histogram.update([]);
       });
+      const strechingBtn = document.getElementById('histogram-streching-btn');
+      strechingBtn.addEventListener('click', () => {
+        if(this.histogramVisible) this.histogram.stretching();
+      });
     }
 
     setupEventListenersForHistogram() {
