@@ -1,4 +1,4 @@
-import Canvas from "./canvas.js";
+import MainCanvas from "./canvas.js";
 import Brush from "./brush.js";
 import Filter from "./filter.js";
 import Menu from "./menu.js";
@@ -7,11 +7,11 @@ import Histogram from "./histogram.js";
 
 class App {
   constructor() {
-    this.canvas = new Canvas();
-    this.brush = new Brush(this.canvas.getCanvas(), this.canvas.getContext());
-    this.filter = new Filter(this.canvas, this.canvas.getContext())
-    this.histogram = new Histogram(this.canvas, this.canvas.getContext());
-    this.menu = new Menu(this.canvas, this.canvas.getContext(), this.filter, this.histogram);
+    this.mainCanvas = new MainCanvas();
+    this.brush = new Brush(this.mainCanvas.getCanvas(), this.mainCanvas.getContext());
+    this.filter = new Filter(this.mainCanvas, this.mainCanvas.getContext())
+    this.histogram = new Histogram(this.mainCanvas, this.mainCanvas.getContext());
+    this.menu = new Menu(this.mainCanvas, this.mainCanvas.getContext(), this.filter, this.histogram);
   }
 }
 

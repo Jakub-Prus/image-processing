@@ -1,6 +1,6 @@
 export default class Histogram {
-  constructor(canvas, ctx) {
-      this.canvas = canvas;
+  constructor(mainCanvas, ctx) {
+      this.mainCanvas = mainCanvas;
       this.ctx = ctx;
       this.A = new Array(256).fill(0);
       this.R = new Array(256).fill(0);
@@ -11,7 +11,7 @@ export default class Histogram {
 
   update(avoidedChannel = []) {
     this.avoidedChannels = avoidedChannel;
-    this.generate(this.canvas.getImageData(), this.canvas.isGrayscale);
+    this.generate(this.mainCanvas.getImageData(), this.mainCanvas.isGrayscale);
   }
 
   generate(imgData, isGrayscale) {
@@ -110,9 +110,9 @@ export default class Histogram {
   }
 
   stretching() {
-    const isGrayscale = this.canvas.isGrayscale;
-    const currentImageData = this.ctx.getImageData(0, 0, this.canvas.getCanvas().width, this.canvas.getCanvas().height);
-    const stretchedImgData = new ImageData(this.canvas.getCanvas().width, this.canvas.getCanvas().height);
+    const isGrayscale = this.mainCanvas.isGrayscale;
+    const currentImageData = this.ctx.getImageData(0, 0, this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
+    const stretchedImgData = new ImageData(this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
 
     if(isGrayscale){
       const edges = this._findEdgesOfChannel(this.A)
@@ -135,7 +135,7 @@ export default class Histogram {
         stretchedImgData.data[i + 3] = (255 / (edgesA.max - edgesA.min)) * (currentImageData.data[i + 3] - edgesA.min);     // Alpha component
       }
     }
-    this.canvas.applyImageDataToCurrentCanvas(stretchedImgData);
+    this.mainCanvas.applyImageDataToCurrentCanvas(stretchedImgData);
     this.update()
 }
 
@@ -158,6 +158,35 @@ export default class Histogram {
     return {min, max}
   }
 
+  stretching() {
+    const isGrayscale = this.mainCanvas.isGrayscale;
+    const currentImageData = this.ctx.getImageData(0, 0, this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
+    const stretchedImgData = new ImageData(this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
+
+    if(isGrayscale){
+      const edges = this._findEdgesOfChannel(this.A)
+      for (let i = 0; i < currentImageData.data.length; i += 4) {
+        stretchedImgData.data[i] = (255 / (edges.max - edges.min)) * (currentImageData.data[i] - edges.min);             // Red component
+        stretchedImgData.data[i + 1] = (255 / (edges.max - edges.min)) * (currentImageData.data[i + 1] - edges.min);     // Green component
+        stretchedImgData.data[i + 2] = (255 / (edges.max - edges.min)) * (currentImageData.data[i + 2] - edges.min);     // Blue component
+        stretchedImgData.data[i + 3] = (255 / (edges.max - edges.min)) * (currentImageData.data[i + 3] - edges.min);     // Alpha component
+      }
+    } else {
+      const edgesR = this._findEdgesOfChannel(this.R)
+      const edgesG = this._findEdgesOfChannel(this.G)
+      const edgesB = this._findEdgesOfChannel(this.B)
+      const edgesA = this._findEdgesOfChannel(this.A)
+
+      for (let i = 0; i < currentImageData.data.length; i += 4) {
+        stretchedImgData.data[i] = (255 / (edgesR.max - edgesR.min)) * (currentImageData.data[i] - edgesR.min);             // Red component
+        stretchedImgData.data[i + 1] = (255 / (edgesG.max - edgesG.min)) * (currentImageData.data[i + 1] - edgesG.min);     // Green component
+        stretchedImgData.data[i + 2] = (255 / (edgesB.max - edgesB.min)) * (currentImageData.data[i + 2] - edgesB.min);     // Blue component
+        stretchedImgData.data[i + 3] = (255 / (edgesA.max - edgesA.min)) * (currentImageData.data[i + 3] - edgesA.min);     // Alpha component
+      }
+    }
+    this.mainCanvas.applyImageDataToCurrentCanvas(stretchedImgData);
+    this.update()
+  }
 
 }
 

@@ -1,7 +1,7 @@
 
 export default class Menu {
-    constructor(canvas, context, filter, histogram) {
-      this.canvas = canvas;
+    constructor(mainCanvas, context, filter, histogram) {
+      this.mainCanvas = mainCanvas;
       this.ctx = context;
       this.filter = filter;
       this.histogram = histogram;
@@ -21,7 +21,7 @@ export default class Menu {
     setupEventListenersForTopMenu() {
       const loadImageBtn = document.getElementById('load-image-btn');
       loadImageBtn.addEventListener('click', () => {
-        this.canvas.loadImage();
+        this.mainCanvas.loadImage();
         this.defaultStateOfCorrections()
       });
     }

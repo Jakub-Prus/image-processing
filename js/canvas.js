@@ -1,4 +1,4 @@
-export default class Canvas {
+export default class MainCanvas {
     constructor() {
       this.canvas;
       this.ctx;

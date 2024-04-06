@@ -1,8 +1,8 @@
 import {CORRECTIONSENUM} from "./constants.js"
 
 export default class Filter {
-    constructor(canvas, context) {
-      this.canvas = canvas;
+    constructor(mainCanvas, context) {
+      this.mainCanvas = mainCanvas;
       this.ctx = context;
       this.corrections = {
         brightness: 0,
@@ -12,9 +12,9 @@ export default class Filter {
     }
   
     grayscale() {
-      if(this.canvas.isGrayscale === true) {
-        this.applyFilterToCurrentCanvas(this.canvas.originalImageData);
-        this.canvas.isGrayscale = false;
+      if(this.mainCanvas.isGrayscale === true) {
+        this.applyFilterToCurrentCanvas(this.mainCanvas.originalImageData);
+        this.mainCanvas.isGrayscale = false;
         return
 
       }
@@ -28,7 +28,7 @@ export default class Filter {
         tempData[i + 3] = data[i + 3];        // Alpha component
       }
       this.applyFilterToCurrentCanvas(tempImageData);
-      this.canvas.isGrayscale = true;
+      this.mainCanvas.isGrayscale = true;
     }
   
     negative() {
@@ -45,7 +45,7 @@ export default class Filter {
     }
   
     applyCorrections() {
-      const originalImageData = this.canvas.originalImageData.data;
+      const originalImageData = this.mainCanvas.originalImageData.data;
       const { tempImageData, data, tempData } = this.generateImageData();
       
       const lookUpTable = this.createLookUpTable(this.corrections);
@@ -125,8 +125,8 @@ export default class Filter {
     }
   
     generateImageData() {
-      const imageData = this.ctx.getImageData(0, 0, this.canvas.getCanvas().width, this.canvas.getCanvas().height);
-      const tempImageData = new ImageData(this.canvas.getCanvas().width, this.canvas.getCanvas().height);
+      const imageData = this.ctx.getImageData(0, 0, this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
+      const tempImageData = new ImageData(this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
       const data = imageData.data;
       const tempData = tempImageData.data;
   
