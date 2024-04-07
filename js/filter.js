@@ -125,8 +125,8 @@ export default class Filter {
     }
   
     generateImageData() {
-      const imageData = this.ctx.getImageData(0, 0, this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
-      const tempImageData = new ImageData(this.mainCanvas.getCanvas().width, this.mainCanvas.getCanvas().height);
+      const imageData = this.ctx.getImageData(0, 0, this.mainCanvas.canvas.width, this.mainCanvas.canvas.height);
+      const tempImageData = new ImageData(this.mainCanvas.canvas.width, this.mainCanvas.canvas.height);
       const data = imageData.data;
       const tempData = tempImageData.data;
   

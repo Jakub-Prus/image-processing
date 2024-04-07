@@ -36,13 +36,7 @@ export default class MainCanvas {
       const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
       return imageData
     }
-    getContext() {
-      return this.ctx;
-    }
-    getCanvas() {
-      return this.canvas;
-    }
-
+    
     applyImageDataToCurrentCanvas(newImageData) {
       this.ctx.putImageData(newImageData, 0, 0);
     }

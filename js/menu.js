@@ -51,6 +51,10 @@ export default class Menu {
       strechingBtn.addEventListener('click', () => {
         if(this.histogramVisible) this.histogram.stretching();
       });
+      const equalizationBtn = document.getElementById('histogram-equalization-btn');
+      equalizationBtn.addEventListener('click', () => {
+        if(this.histogramVisible) this.histogram.equalization();
+      });
     }
 
     setupEventListenersForHistogram() {
