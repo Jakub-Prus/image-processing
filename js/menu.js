@@ -1,10 +1,12 @@
 
 export default class Menu {
-    constructor(mainCanvas, context, filter, histogram) {
+    constructor(mainCanvas, filter, histogram, transformations) {
       this.mainCanvas = mainCanvas;
-      this.ctx = context;
+      this.ctx = mainCanvas.ctx;
       this.filter = filter;
       this.histogram = histogram;
+      this.transformations = transformations;
+
       this.detailsVisible = false;
       this.histogramVisible = false;
   
@@ -49,11 +51,11 @@ export default class Menu {
       });
       const strechingBtn = document.getElementById('histogram-streching-btn');
       strechingBtn.addEventListener('click', () => {
-        if(this.histogramVisible) this.histogram.stretching();
+        if(this.histogramVisible) this.transformations.histogramStreching();
       });
       const equalizationBtn = document.getElementById('histogram-equalization-btn');
       equalizationBtn.addEventListener('click', () => {
-        if(this.histogramVisible) this.histogram.equalization();
+        if(this.histogramVisible) this.transformations.histogramEqualization();
       });
     }
 

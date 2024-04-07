@@ -1,7 +1,7 @@
 export default class Brush {
-    constructor(mainCanvas, context) {
+    constructor(mainCanvas) {
       this.mainCanvas = mainCanvas;
-      this.ctx = context;
+      this.ctx = mainCanvas.ctx;
       this.brushSize = 5;
       this.brushColor = '#000000';
       this.isDrawing = false;

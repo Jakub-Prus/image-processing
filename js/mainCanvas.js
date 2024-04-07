@@ -4,6 +4,7 @@ export default class MainCanvas {
       this.ctx;
       this.setupCanvas(); 
       this.setupResizeHandler();
+      
       this.originalImageData = null;
       this.isGrayscale = false;
     }

@@ -1,9 +1,9 @@
 import {CORRECTIONSENUM} from "./constants.js"
 
 export default class Filter {
-    constructor(mainCanvas, context) {
+    constructor(mainCanvas) {
       this.mainCanvas = mainCanvas;
-      this.ctx = context;
+      this.ctx = mainCanvas.ctx;
       this.corrections = {
         brightness: 0,
         contrast: 0,
