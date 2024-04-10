@@ -1,8 +1,13 @@
+import { PIXELMETHOD } from "./constants.js";
+
 export default class Transformations {
     constructor(mainCanvas, histogram) {
         this.mainCanvas = mainCanvas;
         this.ctx = mainCanvas.ctx;
         this.histogram = histogram;
+
+        this.canvasWidth = this.mainCanvas.canvas.width;
+        this.canvasHeight = this.mainCanvas.canvas.height;
     }
 
     histogramStreching() {
@@ -37,26 +42,6 @@ export default class Transformations {
       this.mainCanvas.applyImageDataToCurrentCanvas(stretchedImgData);
       this.histogram.update()
     }
-  
-    _findEdgesOfChannel(channel) {
-      let min = 0;
-      let max = 255;
-      for (let i = 0; i < 256; i++) {
-          if (channel[i] !== 0) {
-              min = i;
-              break;
-          }
-      }
-      for (let i = 255; i >= 0; i--) {
-          if (channel[i] !== 0) {
-              max = i;
-              break;
-          }
-      }
-  
-      return {min, max}
-    }
-
 
     histogramEqualization() {
       const isGrayscale = this.mainCanvas.isGrayscale;
@@ -128,6 +113,25 @@ export default class Transformations {
       this.histogram.update()
     }
   
+    _findEdgesOfChannel(channel) {
+      let min = 0;
+      let max = 255;
+      for (let i = 0; i < 256; i++) {
+          if (channel[i] !== 0) {
+              min = i;
+              break;
+          }
+      }
+      for (let i = 255; i >= 0; i--) {
+          if (channel[i] !== 0) {
+              max = i;
+              break;
+          }
+      }
+  
+      return {min, max}
+    }
+
     _calculatePropabilityOfPixelsColor(imageDataData) {
       let R = new Array(256).fill(0);
       let G = new Array(256).fill(0);
@@ -164,4 +168,76 @@ export default class Transformations {
   
       return scaledNumbers;
     } 
+
+    _getPixelCyclic(x, y) {
+      let newX = 0;
+      let newY = 0;
+
+      if (x < 0) {
+          newX = this.canvasWidth + (x % this.canvasWidth);
+      } else if (x >= this.canvasWidth) {
+          newX = x % this.canvasWidth;
+      } else {
+          newX = x;
+      }
+
+      if (y < 0) {
+          newY = this.canvasHeight + (y % this.canvasHeight);
+      } else if (y >= this.canvasHeight) {
+          newY = y % this.canvasHeight;
+      } else {
+          newY = y;
+      }
+      
+      return { x: newX, y: newY };
+  }
+
+  _getPixelNull(x, y) {
+      if (x < 0 || x >= this.canvasWidth || y < 0 || y >= this.canvasHeight) {
+          return { x: 0, y: 0 }; // Assuming black color for out-of-bounds pixels
+      }
+
+      return { x, y };
+  }
+
+  _getPixelRepeat(x, y) {
+      let newX = Math.max(0, Math.min(this.canvasWidth - 1, x));
+      let newY = Math.max(0, Math.min(this.canvasHeight - 1, y));
+
+      return { x: newX, y: newY };
+  }
+
+  getWindow(x, y, size, channel, mode) {
+    let windowMatrix = [];
+    const halfSize = Math.floor(size / 2);
+
+    for (let i = x - halfSize; i <= x + halfSize; i++) {
+        const row = [];
+        for (let j = y - halfSize; j <= y + halfSize; j++) {
+            let pixel = {};
+            switch (mode) {
+                case PIXELMETHOD.cyclicEdge:
+                    pixel = this._getPixelCyclic(i, j);
+                    break;
+                case PIXELMETHOD.nullEdge:
+                    pixel = this._getPixelNull(i, j);
+                    break;
+                case PIXELMETHOD.repeatEdge:
+                    pixel = this._getPixelRepeat(i, j);
+                    break;
+                default:
+                    pixel = this._getPixelCyclic(i, j);
+                    break;
+            }
+            const valueForChannelOfPixel = this.mainCanvas.getPixelChannelValue(pixel.x, pixel.y, channel);
+            console.log(valueForChannelOfPixel);
+            row.push(valueForChannelOfPixel);
+        }
+        windowMatrix.push(row);
+    }
+    return windowMatrix;
+  }
+
+
+  
 }

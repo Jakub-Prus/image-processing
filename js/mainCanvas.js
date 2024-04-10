@@ -1,3 +1,5 @@
+import { CHANNEL } from "./constants.js";
+
 export default class MainCanvas {
     constructor() {
       this.canvas;
@@ -12,8 +14,10 @@ export default class MainCanvas {
     setupCanvas() {
       this.canvas = document.getElementById('canvas');
       this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-      this.canvas.width = window.innerWidth - parseInt(getComputedStyle(document.body).getPropertyValue('--tools-menu-width'));
-      this.canvas.height = window.innerHeight - parseInt(getComputedStyle(document.body).getPropertyValue('--top-menu-height'));
+      // this.canvas.width = window.innerWidth - parseInt(getComputedStyle(document.body).getPropertyValue('--tools-menu-width'));
+      // this.canvas.height = window.innerHeight - parseInt(getComputedStyle(document.body).getPropertyValue('--top-menu-height'));
+      this.canvas.width = 512;
+      this.canvas.height = 512;
     }
   
     resizeCanvas() {
@@ -29,13 +33,34 @@ export default class MainCanvas {
     })()
     }
     
-    setupResizeHandler() {
-      window.addEventListener('resize', this.resizeCanvas());
+    setupResizeHandler() { //TODO add proper resizing of canvas
+      // window.addEventListener('resize', this.resizeCanvas());
     }
   
     getImageData() {
       const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
       return imageData
+    }
+
+    getChannelValues(channel) {
+      const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+      let channelArray = []
+      const offset = CHANNEL[channel];
+
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const channelValue = imageData.data[i + offset];
+        channelArray.push(channelValue);
+        }
+
+      return channelArray
+    }
+
+    getPixelChannelValue(x, y, channel){
+      const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+      const offset = CHANNEL[channel];
+      const chosenIndex = ((x % this.canvas.width) + (this.canvas.width * y)) * 4;
+      const chosenValue = imageData.data[chosenIndex + offset]
+      return chosenValue
     }
     
     applyImageDataToCurrentCanvas(newImageData) {

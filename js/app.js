@@ -20,4 +20,5 @@ class App {
 
 window.onload = function() {
   const app = new App();
+  window.app = app; //Debug
 };
