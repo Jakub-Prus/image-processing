@@ -50,10 +50,10 @@ export default class Menu {
 
   setupEventListenersForToolsMenu() {
     const negativeBtn = document.getElementById('negative-filter-btn')!;
-    negativeBtn.addEventListener('click', () => this.filter.negative());
+    negativeBtn.addEventListener('click', () => this.wasm.negative());
 
     const grayscaleBtn = document.getElementById('grayscale-filter-btn')!;
-    grayscaleBtn.addEventListener('click', () => this.filter.grayscale());
+    grayscaleBtn.addEventListener('click', () => this.wasm.grayscale());
 
     const correctionBtn = document.getElementById('correction-filter-btn')!;
     const correctionMenu = document.getElementById('correction-details')!;

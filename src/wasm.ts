@@ -15,23 +15,39 @@ export default class Wasm {
     this.functions = {};
   }
 
+  async grayscale() {
+    await this.use();
+    this.functions.grayscale();
+  }
+
+  async negative() {
+    await this.use();
+    this.functions.negative();
+  }
+
   async gaussianBlur() {
-    await this.use(PIXELMETHOD.cyclicEdge);
-    this.functions.convolveGaussian(this.mainCanvas.canvas.width,
+    await this.use();
+    this.functions.convolveGaussian(
+      this.mainCanvas.canvas.width,
       this.mainCanvas.canvas.height,
       OFFSET.blur,
-      PIXELMETHOD.cyclicEdge, 1.6);
+      PIXELMETHOD.cyclicEdge,
+      1.6,
+    );
   }
 
   async linearBlur() {
-    await this.use(PIXELMETHOD.cyclicEdge);
-    this.functions.convolve(this.mainCanvas.canvas.width,
+    await this.use();
+    this.functions.convolve(
+      this.mainCanvas.canvas.width,
       this.mainCanvas.canvas.height,
       OFFSET.blur,
-      PIXELMETHOD.cyclicEdge, ...MATRICES.linear_blur);
+      PIXELMETHOD.cyclicEdge,
+      ...MATRICES.linear_blur,
+    );
   }
   async blur() {
-    await this.use(PIXELMETHOD.cyclicEdge);
+    await this.use();
     this.functions.convolve(
       this.mainCanvas.canvas.width,
       this.mainCanvas.canvas.height,
@@ -41,17 +57,17 @@ export default class Wasm {
     );
   }
 
-  async use(mode = 0) {
+  async use() {
     const imageData = this.ctx.getImageData(
       0,
       0,
       this.mainCanvas.canvas.width,
       this.mainCanvas.canvas.height,
     );
-    await this.setupAsTransforms(this.ctx, imageData, mode);
+    await this.setupAsTransforms(this.ctx, imageData);
   }
 
-  async setupAsTransforms(ctx: CanvasRenderingContext2D, imageData: { data: any }, mode: number) {
+  async setupAsTransforms(ctx: CanvasRenderingContext2D, imageData: { data: any }) {
     const data = imageData.data;
     const byteSize = data.length;
     const initial = 2 * (((byteSize + 0xffff) & ~0xffff) >>> 16);
@@ -79,8 +95,8 @@ export default class Wasm {
     Object.assign(this.functions, {
       negative: this.transform('negative', imageData, ctx, mem, instance),
       grayscale: this.transform('grayscale', imageData, ctx, mem, instance),
-      convolve: this.transform('convolve', imageData, ctx, mem, instance, mode),
-      convolveGaussian: this.transform('convolveGaussian', imageData, ctx, mem, instance, mode),
+      convolve: this.transform('convolve', imageData, ctx, mem, instance),
+      convolveGaussian: this.transform('convolveGaussian', imageData, ctx, mem, instance),
     });
   }
 
@@ -90,7 +106,6 @@ export default class Wasm {
     ctx: CanvasRenderingContext2D,
     mem: Uint8Array,
     instance: any,
-    mode: any = 0,
   ) {
     return (...args: any) => {
       //retrieve image pixels (4 bytes per pixel: RBGA)
