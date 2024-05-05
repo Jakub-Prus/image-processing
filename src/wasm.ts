@@ -16,21 +16,28 @@ export default class Wasm {
   }
 
   async gaussianBlur() {
-    await this.use();
-    this.functions.convolve(this.mainCanvas.canvas.width, OFFSET.blur, ...MATRICES.blur);
+    await this.use(PIXELMETHOD.cyclicEdge);
+    this.functions.convolveGaussian(this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge, 1.6);
   }
 
   async linearBlur() {
-    await this.use();
-    this.functions.convolve(this.mainCanvas.canvas.width, OFFSET.blur, ...MATRICES.linear_blur);
+    await this.use(PIXELMETHOD.cyclicEdge);
+    this.functions.convolve(this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge, ...MATRICES.linear_blur);
   }
   async blur() {
     await this.use(PIXELMETHOD.cyclicEdge);
     this.functions.convolve(
       this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
       OFFSET.blur,
-      ...MATRICES.blur,
       PIXELMETHOD.cyclicEdge,
+      ...MATRICES.blur,
     );
   }
 
@@ -73,6 +80,7 @@ export default class Wasm {
       negative: this.transform('negative', imageData, ctx, mem, instance),
       grayscale: this.transform('grayscale', imageData, ctx, mem, instance),
       convolve: this.transform('convolve', imageData, ctx, mem, instance, mode),
+      convolveGaussian: this.transform('convolveGaussian', imageData, ctx, mem, instance, mode),
     });
   }
 
@@ -87,6 +95,7 @@ export default class Wasm {
     return (...args: any) => {
       //retrieve image pixels (4 bytes per pixel: RBGA)
       const data = imageData.data;
+      console.log('data', data);
       //copy to bytes to shared memory
       mem.set(data);
 
@@ -96,6 +105,7 @@ export default class Wasm {
 
       //copy the response from the shared memory into the canvas imageData
       data.set(mem.subarray(byteSize, 2 * byteSize));
+      console.log('imageData.data', imageData.data);
       ctx.putImageData(imageData, 0, 0);
     };
   }
