@@ -42,6 +42,11 @@ export const MATRICES = {
   linear_blur: [5, 0, 5, 0, 0, 0, -3, 0, -3],
   emboss: [2, 0, 0, 0, -1, 0, 0, 0, -1],
   emboss_subtle: [1, 1, -1, 1, 3, -1, 1, -1, -1],
-  edge_detect: [1, 1, 1, 1, -7, 1, 1, 1, 1],
-  edge_detect_2: [-5, 0, 0, 0, 0, 0, 0, 0, 5],
+  edge_roberts_x: [1, 0, 0, -1],
+  edge_roberts_y: [0, 1, -1, 0],
+  edge_prewitt_x: [-1, 0, 1, -1, 0, 1, -1, 0, 1],
+  edge_prewitt_y: [-1, -1, -1, 0, 0, 0, 1, 1, 1],
+  edge_sobel_x: [-1, 0, 1, -2, 0, 2, -1, 0, 1],
+  edge_sobel_y: [-1, -2, -1, 0, 0, 0, 1, 2, 1],
+  laplacian: [-1, -1, -1, -1, 8, -1, -1, -1, -1],
 };

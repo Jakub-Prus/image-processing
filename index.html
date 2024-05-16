@@ -71,6 +71,21 @@
         <div class="tools-row">
           <button id="linear-blur-btn" class="tool-button">Linear Blur</button>
         </div>
+        <div class="tools-row">
+          <button id="edge-roberts-btn" class="tool-button">Edge Roberts</button>
+        </div>
+        <div class="tools-row">
+          <button id="edge-prewitt-btn" class="tool-button">Edge Prewitt</button>
+        </div>
+        <div class="tools-row">
+          <button id="edge-sobel-btn" class="tool-button">Edge Sobel</button>
+        </div>
+        <div class="tools-row">
+          <button id="edge-laplacian-btn" class="tool-button">Edge Laplacian</button>
+        </div>
+        <div class="tools-row">
+          <button id="edge-zero-btn" class="tool-button">Edge Zero</button>
+        </div>
       </div>
 
       <canvas id="canvas"></canvas>
@@ -124,7 +139,7 @@
     </div>
 
     <div id="histogram" class="histogram">
-      <canvas id="canvasHistogram" width="512" height="512"></canvas>
+      <canvas id="canvasHistogram"></canvas>
       <div>
         <button id="avoidRed" class="channelButton" data-channel="R">
           Red

@@ -4,7 +4,8 @@
       "binaryFile": "build/debug.wasm",
       "textFile": "build/debug.wat",
       "sourceMap": true,
-      "debug": true
+      "debug": true,
+      "importMemory": true
     },
     "release": {
       "binaryFile": "build/release.wasm",

@@ -92,6 +92,26 @@ export default class Menu {
     linearBlurBtn.addEventListener('click', () => {
       this.wasm.linearBlur();
     });
+    const edgeRobertsBtn = document.getElementById('edge-roberts-btn')!;
+    edgeRobertsBtn.addEventListener('click', () => {
+      this.wasm.edgeDetectionRoberts();
+    });
+    const edgePrewittBtn = document.getElementById('edge-prewitt-btn')!;
+    edgePrewittBtn.addEventListener('click', () => {
+      this.wasm.edgeDetectionPrewitt();
+    });
+    const edgeSobelBtn = document.getElementById('edge-sobel-btn')!;
+    edgeSobelBtn.addEventListener('click', () => {
+      this.wasm.edgeDetectionSobel();
+    });
+    const edgeLaplacianBtn = document.getElementById('edge-laplacian-btn')!;
+    edgeLaplacianBtn.addEventListener('click', () => {
+      this.wasm.edgeDetectionSobel();
+    });
+    const edgeZeroBtn = document.getElementById('edge-zero-btn')!;
+    edgeZeroBtn.addEventListener('click', () => {
+      this.wasm.edgeDetectionZero();
+    });
   }
 
   setupEventListenersForHistogram() {

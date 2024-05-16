@@ -1,7 +1,6 @@
 import MainCanvas from './mainCanvas';
 
 import { OFFSET, MATRICES, PIXELMETHOD } from './constants.ts';
-import { getGauss } from './utils.ts';
 
 export default class Wasm {
   mainCanvas: MainCanvas;
@@ -57,6 +56,53 @@ export default class Wasm {
     );
   }
 
+  async edgeDetectionRoberts() {
+    await this.use();
+    this.functions.edgeDetectionMatrix2(
+      this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge,
+      ...MATRICES.edge_roberts_x,
+      ...MATRICES.edge_roberts_y,
+    );
+  }
+
+  async edgeDetectionSobel() {
+    await this.use();
+    this.functions.edgeDetection(
+      this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge,
+      ...MATRICES.edge_sobel_x,
+      ...MATRICES.edge_sobel_y,
+    );
+  }
+
+  async edgeDetectionPrewitt() {
+    await this.use();
+    this.functions.edgeDetection(
+      this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge,
+      ...MATRICES.edge_prewitt_x,
+      ...MATRICES.edge_prewitt_y,
+    );
+  }
+  async edgeDetectionZero() {
+    await this.use();
+    this.functions.edgeDetectionZero(
+      this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge,
+      1.6,
+      5,
+    );
+  }
+
   async use() {
     const imageData = this.ctx.getImageData(
       0,
@@ -72,20 +118,26 @@ export default class Wasm {
     const byteSize = data.length;
     const initial = 2 * (((byteSize + 0xffff) & ~0xffff) >>> 16);
     const memory = new WebAssembly.Memory({ initial });
+    let module: any;
     const importObject = {
       env: {
         memory,
         abort: () => console.log('Abort!'),
       },
+      index: {
+        printString: console.log,
+        printF64: console.log,
+        printI32: console.log,
+        print: console.log,
+      },
     };
-    let module;
     if (typeof WebAssembly.instantiateStreaming !== 'undefined') {
       // for Chrome & Firefox
-      module = await WebAssembly.instantiateStreaming(fetch('../build/release.wasm'), importObject);
+      module = await WebAssembly.instantiateStreaming(fetch('../build/debug.wasm'), importObject);
     } else {
       // for Safari
       module = await WebAssembly.instantiate(
-        await (await fetch('../build/release.wasm')).arrayBuffer(),
+        await (await fetch('../build/debug.wasm')).arrayBuffer(),
         importObject,
       );
     }
@@ -97,6 +149,9 @@ export default class Wasm {
       grayscale: this.transform('grayscale', imageData, ctx, mem, instance),
       convolve: this.transform('convolve', imageData, ctx, mem, instance),
       convolveGaussian: this.transform('convolveGaussian', imageData, ctx, mem, instance),
+      edgeDetection: this.transform('edgeDetection', imageData, ctx, mem, instance),
+      edgeDetectionMatrix2: this.transform('edgeDetectionMatrix2', imageData, ctx, mem, instance),
+      edgeDetectionZero: this.transform('edgeDetectionZero', imageData, ctx, mem, instance),
     });
   }
 
