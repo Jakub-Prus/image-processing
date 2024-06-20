@@ -63,28 +63,23 @@
           </button>
         </div>
         <div class="tools-row">
-          <button id="blur-btn" class="tool-button">Blur</button>
+          <button id="blur-button" class="tool-button dropdown-menu-button">Blur</button>
+          <div id="blur-menu" class="dropdown-tools-menu hidden">
+            <button id="blur-btn" class="tool-button">Base Blur</button>
+            <button id="gaussian-blur-btn" class="tool-button">Gaussian Blur</button>
+            <button id="linear-blur-btn" class="tool-button">Linear Blur</button>
+          </div>
         </div>
         <div class="tools-row">
-          <button id="gaussian-blur-btn" class="tool-button">Gaussian Blur</button>
-        </div>
-        <div class="tools-row">
-          <button id="linear-blur-btn" class="tool-button">Linear Blur</button>
-        </div>
-        <div class="tools-row">
-          <button id="edge-roberts-btn" class="tool-button">Edge Roberts</button>
-        </div>
-        <div class="tools-row">
-          <button id="edge-prewitt-btn" class="tool-button">Edge Prewitt</button>
-        </div>
-        <div class="tools-row">
-          <button id="edge-sobel-btn" class="tool-button">Edge Sobel</button>
-        </div>
-        <div class="tools-row">
-          <button id="edge-laplacian-btn" class="tool-button">Edge Laplacian</button>
-        </div>
-        <div class="tools-row">
-          <button id="edge-zero-btn" class="tool-button">Edge Zero</button>
+          <button id="edges-button" class="tool-button dropdown-menu-button">Edges</button>
+          <div id="edges-menu" class="dropdown-tools-menu hidden">
+            <button id="edge-roberts-btn" class="tool-button">Edge Roberts</button>
+            <button id="edge-prewitt-btn" class="tool-button">Edge Prewitt</button>
+            <button id="edge-sobel-btn" class="tool-button">Edge Sobel</button>
+            <button id="edge-laplacian-btn" class="tool-button">Edge Laplacian</button>
+            <button id="edge-zero-btn" class="tool-button">Edge Zero</button>
+            <button id="edge-canny-btn" class="tool-button">Edge Canny</button>
+          </div>
         </div>
       </div>
 

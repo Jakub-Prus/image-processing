@@ -112,6 +112,34 @@ export default class Menu {
     edgeZeroBtn.addEventListener('click', () => {
       this.wasm.edgeDetectionZero();
     });
+    const edgeCannyBtn = document.getElementById('edge-canny-btn')!;
+    edgeCannyBtn.addEventListener('click', () => {
+      this.wasm.edgeDetectionCanny();
+    });
+
+    const edgesButton = document.getElementById('edges-button');
+    const edgesMenu = document.getElementById('edges-menu');
+
+    if (edgesButton && edgesMenu) {
+      // Check if elements exist
+      edgesButton.addEventListener('click', () => {
+        edgesMenu.classList.toggle('hidden');
+      });
+    } else {
+      console.error('Dropdown menu elements not found. Please check your HTML structure.');
+    }
+    const blurButton = document.getElementById('blur-button');
+    const blurMenu = document.getElementById('blur-menu');
+
+    if (blurButton && blurMenu) {
+      // Check if elements exist
+      blurButton.addEventListener('click', () => {
+        blurMenu.classList.toggle('hidden');
+      });
+    } else {
+      console.error('Dropdown menu elements not found. Please check your HTML structure.');
+    }
+
   }
 
   setupEventListenersForHistogram() {
