@@ -121,20 +121,30 @@ export default class Menu {
     const edgesMenu = document.getElementById('edges-menu');
 
     if (edgesButton && edgesMenu) {
-      // Check if elements exist
       edgesButton.addEventListener('click', () => {
         edgesMenu.classList.toggle('hidden');
       });
     } else {
       console.error('Dropdown menu elements not found. Please check your HTML structure.');
     }
+
     const blurButton = document.getElementById('blur-button');
     const blurMenu = document.getElementById('blur-menu');
 
     if (blurButton && blurMenu) {
-      // Check if elements exist
       blurButton.addEventListener('click', () => {
         blurMenu.classList.toggle('hidden');
+      });
+    } else {
+      console.error('Dropdown menu elements not found. Please check your HTML structure.');
+    }
+
+    const histogramButton = document.getElementById('histogram-btn');
+    const histogramMenu = document.getElementById('histogram-menu');
+
+    if (histogramButton && histogramMenu) {
+      histogramButton.addEventListener('click', () => {
+        histogramMenu.classList.toggle('hidden');
       });
     } else {
       console.error('Dropdown menu elements not found. Please check your HTML structure.');
