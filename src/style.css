@@ -159,8 +159,8 @@ body {
 canvas {
   /* width: calc(100% - var(--tools-menu-width));
   height: calc(100% - var(--top-menu-height));; */
-  width: 256px;
-  height: 256px;
+  width: 512px;
+  height: 512px;
   border: 2px solid black;
   margin-right: 1px;
   margin-bottom: 4px;

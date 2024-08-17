@@ -1,10 +1,12 @@
 // @ts-nocheck
 // The entry file of your WebAssembly module.
+memory.grow(1)
 
 declare function print(n: any): void;
 declare function printString(n: String): void;
 declare function printF64(n: f64): void;
 declare function printI32(n: i32): void;
+declare function printU8(n: u8): void;
 
 @inline
 function myExp(x: f64): f64 {
@@ -41,9 +43,11 @@ function getGauss(x: f64, y: f64, sigma: f64): f64 {
 
 @inline
 function getLaplacianOfGauss(x: f64, y: f64, sigma: f64): f64 {
+  if (sigma == 0) return 0;
   const numerator: f64 = x * x + y * y - 2;
   const denominator: f64 = sigma * sigma;
   const result: f64 = (numerator / denominator) * getGauss(x, y, sigma);
+  const test = getGauss(x, y, sigma);
   return result;
 }
 
@@ -68,9 +72,14 @@ export function negative(byteSize: i32): i32 {
  * @param byteSize The size of the byte array
  * @returns 0
  */
-export function grayscale(byteSize: i32): i32 {
+export function grayscale(byteSize: i32, internal: boolean): i32 {
   for (let i = 0; i < byteSize; i += 4) {
-    let pos = i + byteSize;
+    let pos: i32;
+    if(internal) {
+      pos = i;
+    } else {
+      pos = i + byteSize;
+    }
     const avg = u8(0.3 * load<u8>(i) + 0.59 * load<u8>(i + 1) + 0.11 * load<u8>(i + 2));
     store<u8>(pos + 0, avg);
     store<u8>(pos + 1, avg);
@@ -199,6 +208,18 @@ function addConvolveValue(pos: i32, length: i32, w: i32, h: i32, mode: i32): i32
   return load<u8>(newPosition);
 }
 
+@inline
+function addConvolveValueGrayscale(pos: i32, length: i32, w: i32, h: i32, mode: i32): f64 {
+  const newPosition = getPixelByMode(pos, w, h, mode);
+  if(newPosition < 0) {
+    return 0
+  }
+
+  const avg = 0.3 * load<u8>(newPosition) + 0.59 * load<u8>(newPosition + 1) + 0.11 * load<u8>(newPosition + 2);
+
+  return avg;
+}
+
 /**
  * Performs a 3x3 convolution operation on an array.
  *
@@ -289,6 +310,7 @@ export function convolveGaussian(
   offset: i32,
   mode: i32,
   sigma: f64,
+  internal: boolean
 ): i32 {
   const v00 = getGauss(-1, 1, sigma);
   const v01 = getGauss(0, 1, sigma);
@@ -308,7 +330,11 @@ export function convolveGaussian(
   for (let i = 0; i < byteSize; i++) {
     // Every fourth element is stored as-is, meaning Alpha channel
     if (((i + 1) & 3) == 0) {
-      store<u8>(i + byteSize, load<u8>(i));
+      if(internal){
+        store<u8>(i, load<u8>(i));
+      } else {
+        store<u8>(i + byteSize, load<u8>(i));
+      }
       continue;
     }
     // Calculate the stride, or the distance between elements in the same column
@@ -335,7 +361,12 @@ export function convolveGaussian(
     res += offset;
 
     // Store the result in the output array
-    store<u8>(i + byteSize, u8(res));
+    if(internal){
+        store<u8>(i, u8(res));
+      } else {
+        store<u8>(i + byteSize, u8(res));
+      }
+    
   }
   return 0;
 }
@@ -478,6 +509,8 @@ export function edgeDetectionMatrix2(
   return 0;
 }
 
+// Memory structure
+// [imgData][laplacianOfGaussImgData][laplacianOfGaussKernel]
 export function edgeDetectionZero(
   byteSize: i32,
   w: i32,
@@ -488,83 +521,95 @@ export function edgeDetectionZero(
   t: i32
 ): i32 {
   const center = 128;
+  const kernelSize = 4;
+  const halfKernel = kernelSize >> 1;
+  printI32(halfKernel)
 
-  const v00 = getLaplacianOfGauss(-1, 1, sigma);
-  const v01 = getLaplacianOfGauss(0, 1, sigma);
-  const v02 = getLaplacianOfGauss(1, 1, sigma);
-  const v10 = getLaplacianOfGauss(-1, 0, sigma);
-  const v11 = getLaplacianOfGauss(0, 0, sigma);
-  const v12 = getLaplacianOfGauss(1, 0, sigma);
-  const v20 = getLaplacianOfGauss(-1, -1, sigma);
-  const v21 = getLaplacianOfGauss(0, -1, sigma);
-  const v22 = getLaplacianOfGauss(1, -1, sigma);
-  // Calculate the sum of the kernel values to use as a divisor
-  let divisor = v00 + v01 + v02 + v10 + v11 + v12 + v20 + v21 + v22 || 1;
-
-  // Loop through each element in the array
-  for (let i = 0; i < byteSize; i++) {
-    // Every fourth element is stored as-is, meaning Alpha channel
-    if (((i + 1) & 3) == 0) {
-      store<u8>(i + byteSize, load<u8>(i));
-      continue;
+  // Pre-compute LoG kernel
+  const kernelOffset = byteSize * 2;
+  for (let y = 0; y < kernelSize; y++) {
+    for (let x = 0; x < kernelSize; x++) {
+      const laplacianOfGaussValue = getLaplacianOfGauss(x - halfKernel, y - halfKernel, sigma);
+      store<f64>(kernelOffset + (y * kernelSize + x) * 8, laplacianOfGaussValue);
     }
-    // Calculate the stride, or the distance between elements in the same column
-    let stride = w * 4;
-
-    // Calculate the indices of the previous and next elements in the same column
-    let upColumn = i - stride;
-    let downColumn = i + stride;
-    let max:f64 = 0;
-    let min:f64 = 1000;
-
-    // Compute each expression and update min and max values
-    let res1 = v00 * addConvolveValue(upColumn - 4, byteSize, w, h, mode);
-    min = Math.min(min, res1);
-    max = Math.max(max, res1);
-
-    let res2 = v01 * addConvolveValue(upColumn, byteSize, w, h, mode);
-    min = Math.min(min, res2);
-    max = Math.max(max, res2);
-
-    let res3 = v02 * addConvolveValue(upColumn + 4, byteSize, w, h, mode);
-    min = Math.min(min, res3);
-    max = Math.max(max, res3);
-
-    let res4 = v10 * addConvolveValue(i - 4, byteSize, w, h, mode);
-    min = Math.min(min, res4);
-    max = Math.max(max, res4);
-
-    let res5 = v11 * addConvolveValue(i, byteSize, w, h, mode);
-    min = Math.min(min, res5);
-    max = Math.max(max, res5);
-
-    let res6 = v12 * addConvolveValue(i + 4, byteSize, w, h, mode);
-    min = Math.min(min, res6);
-    max = Math.max(max, res6);
-
-    let res7 = v20 * addConvolveValue(downColumn - 4, byteSize, w, h, mode);
-    min = Math.min(min, res7);
-    max = Math.max(max, res7);
-
-    let res8 = v21 * addConvolveValue(downColumn, byteSize, w, h, mode);
-    min = Math.min(min, res8);
-    max = Math.max(max, res8);
-
-    let res9 = v22 * addConvolveValue(downColumn + 4, byteSize, w, h, mode);
-    min = Math.min(min, res9);
-    max = Math.max(max, res9);
-
-    // Calculate res by summing all results
-    let res = res1 + res2 + res3 + res4 + res5 + res6 + res7 + res8 + res9;
-
-
-    // Divide the result by the divisor and add the offset value
-    res /= divisor;
-    res += offset;
-    const result = min < (center - t) && max > (center + t) ? res : 0;
-
-    // Store the result in the output array
-    store<u8>(i + byteSize, u8(result));
   }
+
+  // Apply Laplacian of Gaussian to the entire image
+  applyLaplacianOfGaussian(byteSize, w, h, mode, kernelSize, kernelOffset);
+
+  // Detect zero crossings
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      
+      let min: f64 = f64.MAX_VALUE;
+      let max: f64 = f64.MIN_VALUE;
+
+      // Find min and max in the window
+      for (let wy = -halfKernel; wy <= halfKernel; wy++) {
+        for (let wx = -halfKernel; wx <= halfKernel; wx++) {
+          const nx = x + wx;
+          const ny = y + wy;
+          if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+            const value = addConvolveValue(byteSize + (ny * w + nx) * 4, byteSize, w, h, mode);
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+          }
+        }
+      }
+
+      // Check for zero crossing
+      let pixelValue: u8;
+      if (min < (center - t) && max > (center + t)) {
+        // Zero crossing detected, set pixel to 255
+        pixelValue = 255;
+      } else {
+        // No zero crossing, set pixel to 0
+        pixelValue = 0;
+      }
+
+      // Set R, G, B channels
+      store<u8>(i + byteSize, pixelValue);
+      store<u8>(i + byteSize + 1, pixelValue);
+      store<u8>(i + byteSize + 2, pixelValue);
+      
+      // Set alpha channel to 255
+      store<u8>(i + byteSize + 3, 255);
+    }
+  }
+
   return 0;
+}
+
+function applyLaplacianOfGaussian(
+  byteSize: i32,
+  w: i32,
+  h: i32,
+  mode: i32,
+  kernelSize: i32,
+  kernelOffset: i32
+): void {
+  const halfKernel = kernelSize >> 1;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let sum: f64 = 0;
+
+      for (let ky = 0; ky < kernelSize; ky++) {
+        for (let kx = 0; kx < kernelSize; kx++) {
+          const px = x + kx - halfKernel;
+          const py = y + ky - halfKernel;
+          
+          if (px >= 0 && px < w && py >= 0 && py < h) {
+            const i = (py * w + px) * 4;
+            const kernelValue = load<f64>(kernelOffset + (ky * kernelSize + kx) * 8);
+            sum += kernelValue * addConvolveValueGrayscale(i, byteSize, w, h, mode);
+          }
+        }
+      }
+
+      const i = (y * w + x) * 4;
+      store<f32>(byteSize + i, f32(sum));
+    }
+  }
 }

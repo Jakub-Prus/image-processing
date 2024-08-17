@@ -21,8 +21,8 @@ export default class MainCanvas {
     this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })!;
     // this.canvas.width = window.innerWidth - parseInt(getComputedStyle(document.body).getPropertyValue('--tools-menu-width'));
     // this.canvas.height = window.innerHeight - parseInt(getComputedStyle(document.body).getPropertyValue('--top-menu-height'));
-    this.canvas.width = 256;
-    this.canvas.height = 256;
+    this.canvas.width = 512;
+    this.canvas.height = 512;
 
     const img = new Image();
     img.src = '/img/testImg.png';

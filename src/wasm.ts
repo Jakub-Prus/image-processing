@@ -16,7 +16,7 @@ export default class Wasm {
 
   async grayscale() {
     await this.use();
-    this.functions.grayscale();
+    this.functions.grayscale(false);
   }
 
   async negative() {
@@ -32,6 +32,7 @@ export default class Wasm {
       OFFSET.blur,
       PIXELMETHOD.cyclicEdge,
       1.6,
+      false,
     );
   }
 
@@ -126,6 +127,7 @@ export default class Wasm {
       },
       index: {
         printString: console.log,
+        printU8: console.log,
         printF64: console.log,
         printI32: console.log,
         print: console.log,
