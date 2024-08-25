@@ -116,6 +116,18 @@ export default class Menu {
     edgeCannyBtn.addEventListener('click', () => {
       this.wasm.edgeDetectionCanny();
     });
+    const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;
+    downloadDebugImgBtn.addEventListener('click', () => {
+      const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
+      if (canvas) {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'debug-image.png';
+        link.click();
+      } else {
+        console.error('Canvas element not found!');
+      }
+    });
 
     const edgesButton = document.getElementById('edges-button');
     const edgesMenu = document.getElementById('edges-menu');

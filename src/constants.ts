@@ -50,3 +50,14 @@ export const MATRICES = {
   edge_sobel_y: [-1, -2, -1, 0, 0, 0, 1, 2, 1],
   laplacian: [-1, -1, -1, -1, 8, -1, -1, -1, -1],
 };
+
+export const TRANSFORM = {
+  negative: 'negative',
+  grayscale: 'grayscale',
+  convolve: 'convolve',
+  convolveGaussian: 'convolveGaussian',
+  edgeDetection: 'edgeDetection',
+  edgeDetectionMatrix2: 'edgeDetectionMatrix2',
+  edgeDetectionZero: 'edgeDetectionZero',
+  edgeDetectionCanny: 'edgeDetectionCanny',
+};

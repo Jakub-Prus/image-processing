@@ -194,18 +194,18 @@ function getPixelByMode(pos: i32, w: i32, h: i32, mode: i32): i32 {
  * of the array.
  *
  * @param pos - The position in the array to retrieve the value from
- * @param length - The length of the array
+ * @param offset - The offset of the array
  * @param w - The width of the array
  * @param mode - The mode for handling out-of-bounds values (not used in this function)
  * @returns The value at the specified position `pos` in the array
  */
 @inline
-function addConvolveValue(pos: i32, length: i32, w: i32, h: i32, mode: i32): i32 {
-  const newPosition = getPixelByMode(pos, w, h, mode);
+function getValueFromPosition(pos: i32, offset: i32, w: i32, h: i32, mode: i32): i32 { //TODO possibly remove length argument
+  const newPosition = getPixelByMode(pos - offset, w, h, mode);
   if(newPosition < 0) {
     return 0
   }
-  return load<u8>(newPosition);
+  return load<u8>(newPosition + offset);
 }
 
 @inline
@@ -268,17 +268,17 @@ export function convolve(
     let upColumn = i + stride;
     let downColumn = i - stride;
 
-    // Perform the convolution operation using the 3x3 kernel and the addConvolveValue helper function
+    // Perform the convolution operation using the 3x3 kernel and the getValueFromPosition helper function
     let res =
-      v00 * addConvolveValue(upColumn - 4, byteSize, w, h, mode) +
-      v01 * addConvolveValue(upColumn, byteSize, w, h, mode) +
-      v02 * addConvolveValue(upColumn + 4, byteSize, w, h, mode) +
-      v10 * addConvolveValue(i - 4, byteSize, w, h, mode) +
-      v11 * addConvolveValue(i, byteSize, w, h, mode) +
-      v12 * addConvolveValue(i + 4, byteSize, w, h, mode) +
-      v20 * addConvolveValue(downColumn - 4, byteSize, w, h, mode) +
-      v21 * addConvolveValue(downColumn, byteSize, w, h, mode) +
-      v22 * addConvolveValue(downColumn + 4, byteSize, w, h, mode);
+      v00 * getValueFromPosition(upColumn - 4, 0, w, h, mode) +
+      v01 * getValueFromPosition(upColumn, 0, w, h, mode) +
+      v02 * getValueFromPosition(upColumn + 4, 0, w, h, mode) +
+      v10 * getValueFromPosition(i - 4, 0, w, h, mode) +
+      v11 * getValueFromPosition(i, 0, w, h, mode) +
+      v12 * getValueFromPosition(i + 4, 0, w, h, mode) +
+      v20 * getValueFromPosition(downColumn - 4, 0, w, h, mode) +
+      v21 * getValueFromPosition(downColumn, 0, w, h, mode) +
+      v22 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
 
     // Divide the result by the divisor and add the offset value
     res /= divisor;
@@ -344,17 +344,17 @@ export function convolveGaussian(
     let upColumn = i + stride;
     let downColumn = i - stride;
 
-    // Perform the convolution operation using the 3x3 kernel and the addConvolveValue helper function
+    // Perform the convolution operation using the 3x3 kernel and the getValueFromPosition helper function
     let res =
-      v00 * addConvolveValue(upColumn - 4, byteSize, w, h, mode) +
-      v01 * addConvolveValue(upColumn, byteSize, w, h, mode) +
-      v02 * addConvolveValue(upColumn + 4, byteSize, w, h, mode) +
-      v10 * addConvolveValue(i - 4, byteSize, w, h, mode) +
-      v11 * addConvolveValue(i, byteSize, w, h, mode) +
-      v12 * addConvolveValue(i + 4, byteSize, w, h, mode) +
-      v20 * addConvolveValue(downColumn - 4, byteSize, w, h, mode) +
-      v21 * addConvolveValue(downColumn, byteSize, w, h, mode) +
-      v22 * addConvolveValue(downColumn + 4, byteSize, w, h, mode);
+      v00 * getValueFromPosition(upColumn - 4, 0, w, h, mode) +
+      v01 * getValueFromPosition(upColumn, 0, w, h, mode) +
+      v02 * getValueFromPosition(upColumn + 4, 0, w, h, mode) +
+      v10 * getValueFromPosition(i - 4, 0, w, h, mode) +
+      v11 * getValueFromPosition(i, 0, w, h, mode) +
+      v12 * getValueFromPosition(i + 4, 0, w, h, mode) +
+      v20 * getValueFromPosition(downColumn - 4, 0, w, h, mode) +
+      v21 * getValueFromPosition(downColumn, 0, w, h, mode) +
+      v22 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
 
     // Divide the result by the divisor and add the offset value
     res /= divisor;
@@ -416,28 +416,28 @@ export function edgeDetection(
     let upColumn = i - stride;
     let downColumn = i + stride;
 
-    //  Perform the convolution operation using the 3x3 kernel and the addConvolveValue helper function
+    //  Perform the convolution operation using the 3x3 kernel and the getValueFromPosition helper function
     let resX =
-      vx00 * addConvolveValue(upColumn - 4, byteSize, w, h, mode) +
-      vx01 * addConvolveValue(upColumn, byteSize, w, h, mode) +
-      vx02 * addConvolveValue(upColumn + 4, byteSize, w, h, mode) +
-      vx10 * addConvolveValue(i - 4, byteSize, w, h, mode) +
-      vx11 * addConvolveValue(i, byteSize, w, h, mode) +
-      vx12 * addConvolveValue(i + 4, byteSize, w, h, mode) +
-      vx20 * addConvolveValue(downColumn - 4, byteSize, w, h, mode) +
-      vx21 * addConvolveValue(downColumn, byteSize, w, h, mode) +
-      vx22 * addConvolveValue(downColumn + 4, byteSize, w, h, mode);
+      vx00 * getValueFromPosition(upColumn - 4, 0, w, h, mode) +
+      vx01 * getValueFromPosition(upColumn, 0, w, h, mode) +
+      vx02 * getValueFromPosition(upColumn + 4, 0, w, h, mode) +
+      vx10 * getValueFromPosition(i - 4, 0, w, h, mode) +
+      vx11 * getValueFromPosition(i, 0, w, h, mode) +
+      vx12 * getValueFromPosition(i + 4, 0, w, h, mode) +
+      vx20 * getValueFromPosition(downColumn - 4, 0, w, h, mode) +
+      vx21 * getValueFromPosition(downColumn, 0, w, h, mode) +
+      vx22 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
 
     let resY =
-      vy00 * addConvolveValue(upColumn - 4, byteSize, w, h, mode) +
-      vy01 * addConvolveValue(upColumn, byteSize, w, h, mode) +
-      vy02 * addConvolveValue(upColumn + 4, byteSize, w, h, mode) +
-      vy10 * addConvolveValue(i - 4, byteSize, w, h, mode) +
-      vy11 * addConvolveValue(i, byteSize, w, h, mode) +
-      vy12 * addConvolveValue(i + 4, byteSize, w, h, mode) +
-      vy20 * addConvolveValue(downColumn - 4, byteSize, w, h, mode) +
-      vy21 * addConvolveValue(downColumn, byteSize, w, h, mode) +
-      vy22 * addConvolveValue(downColumn + 4, byteSize, w, h, mode);
+      vy00 * getValueFromPosition(upColumn - 4, 0, w, h, mode) +
+      vy01 * getValueFromPosition(upColumn, 0, w, h, mode) +
+      vy02 * getValueFromPosition(upColumn + 4, 0, w, h, mode) +
+      vy10 * getValueFromPosition(i - 4, 0, w, h, mode) +
+      vy11 * getValueFromPosition(i, 0, w, h, mode) +
+      vy12 * getValueFromPosition(i + 4, 0, w, h, mode) +
+      vy20 * getValueFromPosition(downColumn - 4, 0, w, h, mode) +
+      vy21 * getValueFromPosition(downColumn, 0, w, h, mode) +
+      vy22 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
 
     // Divide the result by the divisor and add the offset value
     resX /= divisorX;
@@ -484,18 +484,18 @@ export function edgeDetectionMatrix2(
     let upColumn = i - stride;
     let downColumn = i + stride;
 
-    //  Perform the convolution operation using the 2x2 kernel and the addConvolveValue helper function
+    //  Perform the convolution operation using the 2x2 kernel and the getValueFromPosition helper function
     let resX =
-      vx00 * addConvolveValue(i, byteSize, w, h, mode) +
-      vx01 * addConvolveValue(i + 4, byteSize, w, h, mode) +
-      vx10 * addConvolveValue(downColumn, byteSize, w, h, mode) +
-      vx11 * addConvolveValue(downColumn + 4, byteSize, w, h, mode);
+      vx00 * getValueFromPosition(i, 0, w, h, mode) +
+      vx01 * getValueFromPosition(i + 4, 0, w, h, mode) +
+      vx10 * getValueFromPosition(downColumn, 0, w, h, mode) +
+      vx11 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
 
     let resY =
-      vy00 * addConvolveValue(i, byteSize, w, h, mode) +
-      vy01 * addConvolveValue(i + 4, byteSize, w, h, mode) +
-      vy10 * addConvolveValue(downColumn, byteSize, w, h, mode) +
-      vy11 * addConvolveValue(downColumn + 4, byteSize, w, h, mode);
+      vy00 * getValueFromPosition(i, 0, w, h, mode) +
+      vy01 * getValueFromPosition(i + 4, 0, w, h, mode) +
+      vy10 * getValueFromPosition(downColumn, 0, w, h, mode) +
+      vy11 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
 
     // Divide the result by the divisor and add the offset value
     resX /= divisorX;
@@ -523,7 +523,6 @@ export function edgeDetectionZero(
   const center = 128;
   const kernelSize = 4;
   const halfKernel = kernelSize >> 1;
-  printI32(halfKernel)
 
   // Pre-compute LoG kernel
   const kernelOffset = byteSize * 2;
@@ -551,7 +550,7 @@ export function edgeDetectionZero(
           const nx = x + wx;
           const ny = y + wy;
           if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-            const value = addConvolveValue(byteSize + (ny * w + nx) * 4, byteSize, w, h, mode);
+            const value = getValueFromPosition(byteSize + (ny * w + nx) * 4, 0, w, h, mode);
             min = Math.min(min, value);
             max = Math.max(max, value);
           }
@@ -610,6 +609,232 @@ function applyLaplacianOfGaussian(
 
       const i = (y * w + x) * 4;
       store<f32>(byteSize + i, f32(sum));
+    }
+  }
+}
+
+function copyPartOfDataToSetMemory(firstIndexToLoad: i32, firstIndexToStore: i32, length: i32): void {
+  for(let i = 0; i < length; i++){
+    store<u8>(firstIndexToStore + i, load<u8>(firstIndexToLoad + i))
+  }
+}
+
+// Memory structure
+// [imgData][finalImgData][gradientMagnitude][gradientDirection]
+// https://justin-liang.com/tutorials/canny/
+// https://medium.com/@rohit-krishna/coding-canny-edge-detection-algorithm-from-scratch-in-python-232e1fdceac7
+export function edgeDetectionCanny(
+  byteSize: i32,
+  w: i32,
+  h: i32,
+  offset: i32,
+  mode: i32,
+  sigma: f64,
+  lowThreshold: f32,
+  highThreshold: f32
+): void {
+  let maxMagnitude = f32.MIN_VALUE;
+  const finalImgFirstIndex = byteSize;
+  const gradientMagnitudeFirstIndex = byteSize * 2;
+  const gradientDirectionFirstIndex = byteSize * 3;
+  
+  // Step 1: Apply Grayscale
+  grayscale(byteSize, true);
+
+  // Step 2: Apply Gaussian blur
+  // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
+  // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
+  // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
+  // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
+  convolveGaussian(byteSize, w, h, offset, mode, sigma, false);
+
+
+  // Step 3: Determine intensity gradients (Sobel filter) 
+  //TODO here is some problem it looks wrong after convolution
+  const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+  const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let gradientX = 0;
+      let gradientY = 0;
+      for (let j = -1; j <= 1; j++) {
+        for (let i = -1; i <= 1; i++) {
+          const pixel = load<u8>(getValueFromPosition(((y + j) * w + (x + i)) * 4, byteSize, w, h, mode));
+          gradientX += pixel * sobelX[(j + 1) * 3 + (i + 1)];
+          gradientY += pixel * sobelY[(j + 1) * 3 + (i + 1)];
+        }
+      }
+      const magnitude = <f32>(Math.hypot(gradientX, gradientY) || 0.0001);
+      const direction = <f32>(Math.atan2(gradientY, gradientX));
+      const idx = (y * w + x) * 4;
+      store<u8>(idx + 0 + byteSize, <u8>(gradientX));
+      store<u8>(idx + 1 + byteSize, <u8>(gradientX));
+      store<u8>(idx + 2 + byteSize, <u8>(gradientX));
+      store<u8>(idx + 3 + byteSize, 256);
+      maxMagnitude = <f32>(Math.max(maxMagnitude, magnitude));
+      store<f32>(gradientMagnitudeFirstIndex + idx, magnitude);
+      store<f32>(gradientDirectionFirstIndex + idx, direction);
+    }
+  }
+
+  // Step 4: Normalize magnitude values
+  if (maxMagnitude > 0) {
+    for (let i = 0; i < byteSize / 4; i++) {
+      const idx = i * 4;
+      const magnitude = load<f32>(gradientMagnitudeFirstIndex + idx);
+      const normalizedMagnitude = magnitude / (maxMagnitude + 0.0001);
+      store<f32>(gradientMagnitudeFirstIndex + idx, normalizedMagnitude);
+      // if(normalizedMagnitude > 1){
+      // printF64(normalizedMagnitude);
+      // }
+    }
+  } else {
+    // Handle the case where maxMagnitude is zero
+    for (let i = 0; i < byteSize / 4; i++) {
+      const idx = i * 4;
+      store<f32>(gradientMagnitudeFirstIndex + idx, 0);
+    }
+  }
+
+
+  copyPartOfDataToSetMemory(byteSize, byteSize * 5, byteSize);
+  
+  // Step 3: Non-maximum suppression
+for (let y = 1; y < h - 1; y++) {
+  for (let x = 1; x < w - 1; x++) {
+    const idx = y * w + x;
+    const magnitude = load<f32>(gradientMagnitudeFirstIndex + idx * 4);
+    const direction = load<f32>(gradientDirectionFirstIndex + idx * 4);
+    // Normalize the direction to the range [0, 2 * Math.PI)
+    const normalizedDirection = (direction + 2 * Math.PI) % (2 * Math.PI);
+
+    // Calculate the angle in the range [0, 8)
+    const angle = (normalizedDirection / (Math.PI / 4)) % 8;
+
+
+    // Calculate the indices of the neighboring pixels
+    let neighbor1Index: i32, neighbor2Index: i32;
+
+    if (angle < 1) {
+      neighbor1Index = idx - 1;
+      neighbor2Index = idx + 1;
+    } else if (angle < 2) {
+      neighbor1Index = idx - w + 1;
+      neighbor2Index = idx + w - 1;
+    } else if (angle < 3) {
+      neighbor1Index = idx - w;
+      neighbor2Index = idx + w;
+    } else if (angle < 4) {
+      neighbor1Index = idx - w - 1;
+      neighbor2Index = idx + w + 1;
+    } else if (angle < 5) {
+      neighbor1Index = idx + 1;
+      neighbor2Index = idx - 1;
+    } else if (angle < 6) {
+      neighbor1Index = idx + w - 1;
+      neighbor2Index = idx - w + 1;
+    } else if (angle < 7) {
+      neighbor1Index = idx + w;
+      neighbor2Index = idx - w;
+    } else {
+      neighbor1Index = idx + w + 1;
+      neighbor2Index = idx - w - 1;
+    }
+
+    // Load the magnitudes of the neighboring pixels
+    const neighbor1 = load<f32>(gradientMagnitudeFirstIndex + neighbor1Index * 4);
+    const neighbor2 = load<f32>(gradientMagnitudeFirstIndex + neighbor2Index * 4);
+
+    // Perform non-maximum suppression
+    if (magnitude < neighbor1 || magnitude < neighbor2) {
+      store<f32>(gradientMagnitudeFirstIndex + idx * 4, 0);
+    }
+  }
+}
+  
+
+
+  // Step 4: Double thresholding
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = ((y * w + x) * 4) + byteSize;
+      const magnitude = load<f32>(gradientMagnitudeFirstIndex + (y * w + x) * 4);
+
+      if (magnitude > highThreshold) {
+        // Strong edge
+        store<u8>(idx, 255);
+        store<u8>(idx + 1, 255);
+        store<u8>(idx + 2, 255);
+        store<u8>(idx + 3, 255);
+      } else if (magnitude > lowThreshold) {
+        // Weak edge
+        store<u8>(idx, 128);
+        store<u8>(idx + 1, 128);
+        store<u8>(idx + 2, 128);
+        store<u8>(idx + 3, 255);  // Ensure the alpha channel is fully opaque
+      } else {
+        // Non-edge
+        store<u8>(idx, 0);
+        store<u8>(idx + 1, 0);
+        store<u8>(idx + 2, 0);
+        store<u8>(idx + 3, 255);  // Ensure the alpha channel is fully opaque
+      }
+    }
+  }
+
+  // Step 5: Edge tracking by hysteresis
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = ((y * w + x) * 4) + byteSize;
+
+      // Check if the pixel is a weak edge
+      if (getValueFromPosition(idx - byteSize, byteSize, w, h, mode) == 128) {
+        let hasStrongNeighbor = false;
+
+        // Check all neighboring pixels (8-connected)
+        for (let j = -1; j <= 1; j++) {
+          for (let i = -1; i <= 1; i++) {
+            if (i == 0 && j == 0) continue;
+
+            const neighborIdx = ((y + j) * w + (x + i)) * 4;
+            // Check if the neighbor is a strong edge
+            if (getValueFromPosition(neighborIdx, byteSize, w, h, mode) == 255) {
+              hasStrongNeighbor = true;
+              break;
+            }
+          }
+          if (hasStrongNeighbor) break;
+        }
+
+        // If any neighbor is a strong edge, promote the weak edge to a strong one
+        if (hasStrongNeighbor) {
+          store<u8>(idx, 255);
+          store<u8>(idx + 1, 255);
+          store<u8>(idx + 2, 255);
+          store<u8>(idx + 3, 255);  // Ensure the alpha channel is fully opaque
+        } else {
+          // Otherwise, suppress the weak edge
+          store<u8>(idx, 0);
+          store<u8>(idx + 1, 0);
+          store<u8>(idx + 2, 0);
+          store<u8>(idx + 3, 255);  // Ensure the alpha channel is fully opaque
+        }
+      }
+    }
+  }
+  // Step 7: Clean up - Set remaining weak edges to zero
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = ((y * w + x) * 4) + byteSize;
+      
+      if (getValueFromPosition(idx, byteSize, w, h, mode) == 128 || getValueFromPosition(idx + 1, byteSize, w, h, mode) == 128 || getValueFromPosition(idx + 2, byteSize, w, h, mode) == 128) {
+        // printF64(getValueFromPosition(idx, byteSize, w, h, mode));
+        store<u8>(idx, 0);
+        store<u8>(idx + 1, 0);
+        store<u8>(idx + 2, 0);
+        store<u8>(idx + 3, 255);  // Ensure the alpha channel is fully opaque
+      }
     }
   }
 }

@@ -25,7 +25,7 @@ export default class MainCanvas {
     this.canvas.height = 512;
 
     const img = new Image();
-    img.src = '/img/testImg.png';
+    img.src = '/img/hering.jpg';
     img.crossOrigin = 'anonymous';
     img.onload = () => this.original(img);
   }

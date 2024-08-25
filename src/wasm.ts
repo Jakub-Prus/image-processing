@@ -1,6 +1,6 @@
 import MainCanvas from './mainCanvas';
 
-import { OFFSET, MATRICES, PIXELMETHOD } from './constants.ts';
+import { OFFSET, MATRICES, PIXELMETHOD, TRANSFORM } from './constants.ts';
 export default class Wasm {
   mainCanvas: MainCanvas;
   functions: any;
@@ -21,6 +21,9 @@ export default class Wasm {
     this.mem = null;
   }
 
+  // Memory structure
+  // Blocks with same size // TODO can be optimized to not be same size for each block
+  // [original data][transformed data][data slot 1][data slot 2][data slot 3][debugData]
   async initialize() {
     if (this.instance) return; // Already initialized
 
@@ -32,7 +35,7 @@ export default class Wasm {
     );
     const data = imageData.data;
     const byteSize = data.length;
-    const initial = (4 * ((byteSize + 0xffff) & ~0xffff)) >>> 16;
+    const initial = (6 * ((byteSize + 0xffff) & ~0xffff)) >>> 16;
     this.memory = new WebAssembly.Memory({ initial });
 
     const importObject = {
@@ -74,35 +77,22 @@ export default class Wasm {
     const mem = this.mem;
 
     Object.assign(this.functions, {
-      negative: transform('negative', imageData, ctx, mem, instance),
-      grayscale: transform('grayscale', imageData, ctx, mem, instance),
-      convolve: transform('convolve', imageData, ctx, mem, instance),
-      convolveGaussian: transform('convolveGaussian', imageData, ctx, mem, instance),
-      edgeDetection: transform('edgeDetection', imageData, ctx, mem, instance),
-      edgeDetectionMatrix2: transform('edgeDetectionMatrix2', imageData, ctx, mem, instance),
-      edgeDetectionZero: transform('edgeDetectionZero', imageData, ctx, mem, instance),
-      edgeDetectionCanny: transform('edgeDetectionCanny', imageData, ctx, mem, instance),
+      negative: transform(TRANSFORM.negative, imageData, ctx, mem, instance),
+      grayscale: transform(TRANSFORM.grayscale, imageData, ctx, mem, instance),
+      convolve: transform(TRANSFORM.convolve, imageData, ctx, mem, instance),
+      convolveGaussian: transform(TRANSFORM.convolveGaussian, imageData, ctx, mem, instance),
+      edgeDetection: transform(TRANSFORM.edgeDetection, imageData, ctx, mem, instance),
+      edgeDetectionMatrix2: transform(
+        TRANSFORM.edgeDetectionMatrix2,
+        imageData,
+        ctx,
+        mem,
+        instance,
+      ),
+      edgeDetectionZero: transform(TRANSFORM.edgeDetectionZero, imageData, ctx, mem, instance),
+      edgeDetectionCanny: transform(TRANSFORM.edgeDetectionCanny, imageData, ctx, mem, instance),
     });
   }
-
-  async ensureInitialized() {
-    if (!this.instance) {
-      await this.initialize();
-    }
-  }
-
-  // Update all your existing methods to use ensureInitialized instead of use
-  async grayscale() {
-    await this.ensureInitialized();
-    this.functions.grayscale(false);
-  }
-
-  async negative() {
-    await this.ensureInitialized();
-    this.functions.negative();
-  }
-
-  // ... Update other methods similarly ...
 
   transform(
     fn: string,
@@ -131,12 +121,66 @@ export default class Wasm {
       // @ts-ignore
       instance.exports[fn](byteSize, ...args);
       // Copy the response from the shared memory into the canvas imageData
-      data.set(mem.subarray(byteSize, 2 * byteSize));
+      data.set(mem.subarray(byteSize, byteSize * 2));
+      this.displayDebugData(
+        mem.subarray(byteSize * 5, byteSize * 6),
+        this.mainCanvas.canvas.width,
+        this.mainCanvas.canvas.height,
+      );
       ctx.putImageData(imageData, 0, 0);
     };
   }
 
-  // Update all your existing methods to use the new structure
+  displayDebugData(data: Uint8Array, width: number, height: number): void {
+    const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas?.getContext('2d') as CanvasRenderingContext2D;
+
+    if (!canvas || !ctx) {
+      console.error('Debug canvas or context not found');
+      return;
+    }
+
+    // Create ImageData from the provided data
+    const imageData = new ImageData(width, height);
+    imageData.data.set(data);
+
+    // Update the canvas with the processed image data
+    ctx.putImageData(imageData, 0, 0);
+
+    // Logging information from the provided data
+    console.log('Debug data:', data);
+    console.log('Unique debug values (Set):', new Set(data));
+    console.log('Value debug occurrences:', this.countOccurrences(data));
+  }
+
+  countOccurrences(array: Uint8Array): Map<number, number> {
+    const counts = new Map<number, number>();
+
+    array.forEach(element => {
+      counts.set(element, (counts.get(element) || 0) + 1);
+    });
+
+    return counts;
+  }
+
+  async ensureInitialized() {
+    if (!this.instance) {
+      await this.initialize();
+    }
+  }
+
+  async grayscale() {
+    await this.ensureInitialized();
+    this.functions.grayscale(false);
+  }
+
+  async negative() {
+    await this.ensureInitialized();
+    this.functions.negative();
+  }
+
   async gaussianBlur() {
     await this.ensureInitialized();
     this.functions.convolveGaussian(
@@ -217,5 +261,41 @@ export default class Wasm {
       1.6,
       5,
     );
+  }
+
+  async edgeDetectionCanny() {
+    await this.ensureInitialized();
+    this.functions.grayscale(false);
+    this.functions.convolveGaussian(
+      this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge,
+      1.6,
+      false,
+    );
+    this.functions.edgeDetection(
+      this.mainCanvas.canvas.width,
+      this.mainCanvas.canvas.height,
+      OFFSET.blur,
+      PIXELMETHOD.cyclicEdge,
+      ...MATRICES.edge_sobel_x,
+      ...MATRICES.edge_sobel_y,
+    );
+
+    // this.functions.edgeDetectionCanny(
+    //   this.mainCanvas.canvas.width,
+    //   this.mainCanvas.canvas.height,
+    //   OFFSET.blur,
+    //   PIXELMETHOD.cyclicEdge,
+    //   1,
+    //   0.5,
+    //   0.9,
+    // );
+
+    //   // Copy edge detection results back to image data
+    //   data.set(this.mem.subarray(byteSize, 2 * byteSize));
+
+    //   this.ctx.putImageData(imageData, 0, 0);
   }
 }
