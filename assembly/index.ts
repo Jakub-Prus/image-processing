@@ -232,7 +232,8 @@ function addConvolveValueGrayscale(pos: i32, length: i32, w: i32, h: i32, mode: 
  * @param h - The height of the array
  * @param offset - An offset value to add to the result of the convolution operation
  * @param mode - The mode for handling out-of-bounds values in the convolution operation
- * @param v00-v22 - The values of the 3x3 convolution kernel
+ * @param sizeOfKernel - The size of the kernel (assuming a square kernel)
+ * @param slotsUsed - The number of slots used for the kernel values
  * @returns 0
  */
 export function convolve(
@@ -241,18 +242,38 @@ export function convolve(
   h: i32,
   offset: i32,
   mode: i32,
-  v00: i32,
-  v01: i32,
-  v02: i32,
-  v10: i32,
-  v11: i32,
-  v12: i32,
-  v20: i32,
-  v21: i32,
-  v22: i32,
+  sizeOfKernel: i32,
+  slotsUsed: i32,
+  option: i32,
+  sigma: i32,
 ): i32 {
+  printI32(option);
   // Calculate the sum of the kernel values to use as a divisor
-  let divisor = v00 + v01 + v02 + v10 + v11 + v12 + v20 + v21 + v22 || 1;
+  let divisor1 = 0;
+  let divisor2 = 0.0;
+  let divisorX = 0.0;
+  let divisorY = 0.0;
+
+  // Calculate divisors
+  for (let i = 0; i < sizeOfKernel * sizeOfKernel; i++) {
+    if (option === 0) { // Convolve
+      const valueFromKernel = load<u8>(byteSize * 2 + i);
+      divisor1 += valueFromKernel;
+    }
+    else if (option === 1) { // Edge detection
+      const valueFromKernelX = load<u8>(byteSize * 2 + i);
+      const valueFromKernelY = load<u8>(byteSize * 3 + i);
+      divisorX += valueFromKernelX;
+      divisorY += valueFromKernelY;
+    }
+    else if (option === 2) { // Gaussian blur
+      const kernelRow = i / sizeOfKernel | 0;
+      const kernelCol = i % sizeOfKernel;
+      const valueFromKernel = getGauss(kernelCol, kernelCol, sigma);
+      // const valueFromKernel = load<f32>(byteSize * 2 + i) / 10000;
+      divisor2 += valueFromKernel;
+    }
+  }
 
   // Loop through each element in the array
   for (let i = 0; i < byteSize; i++) {
@@ -261,32 +282,61 @@ export function convolve(
       store<u8>(i + byteSize, load<u8>(i));
       continue;
     }
-    // Calculate the stride, or the distance between elements in the same column
-    let stride = w * 4;
 
-    // Calculate the indices of the previous and next elements in the same column
-    let upColumn = i + stride;
-    let downColumn = i - stride;
+    // Perform the convolution operation using the specified kernel and the getValueFromPosition helper function
+    let res1 = 0;
+    let res2 = 0.0;
+    let resX = 0.0;
+    let resY = 0.0;
+    for (let j = 0; j < sizeOfKernel * sizeOfKernel; j++) {
+      if (option === 0 ) { // Convolve
+        const valueFromKernel = load<u8>(byteSize * 2 + j);
+        const kernelRow = j / sizeOfKernel | 0;
+        const kernelCol = j % sizeOfKernel;
+        const pixelRow = i / (w * 4) + kernelRow - 1;
+        const pixelCol = (i % (w * 4)) / 4 + kernelCol - 1;
+        res1 += valueFromKernel * getValueFromPosition(pixelRow * w * 4 + pixelCol * 4, 0, w, h, mode);
+      } 
+      else if (option === 1) { // Edge detection
+        const valueFromKernelX = load<u8>(byteSize * 2 + j);
+        const valueFromKernelY = load<u8>(byteSize * 3 + j);
+        const kernelRow = j / sizeOfKernel | 0;
+        const kernelCol = j % sizeOfKernel;
+        const pixelRow = i / (w * 4) + kernelRow - 1;
+        const pixelCol = (i % (w * 4)) / 4 + kernelCol - 1;
+        const pixelValue = getValueFromPosition(pixelRow * w * 4 + pixelCol * 4, 0, w, h, mode);
+        resX += valueFromKernelX * pixelValue;
+        resY += valueFromKernelY * pixelValue;
+      } 
+      else if (option === 2) { // Gaussian blur
+        // const valueFromKernel = load<f32>(byteSize * 2 + j);
+        const kernelRow = j / sizeOfKernel | 0;
+        const kernelCol = j % sizeOfKernel;
+        const pixelRow = i / (w * 4) + kernelRow - 1;
+        const pixelCol = (i % (w * 4)) / 4 + kernelCol - 1;
+        // res2 += valueFromKernel / 1000 * <f32>(getValueFromPosition(pixelRow * w * 4 + pixelCol * 4, 0, w, h, mode));
+        res2 += getGauss(kernelCol, kernelCol, sigma) * <f32>(getValueFromPosition(pixelRow * w * 4 + pixelCol * 4, 0, w, h, mode));
+      }
+    }
 
-    // Perform the convolution operation using the 3x3 kernel and the getValueFromPosition helper function
-    let res =
-      v00 * getValueFromPosition(upColumn - 4, 0, w, h, mode) +
-      v01 * getValueFromPosition(upColumn, 0, w, h, mode) +
-      v02 * getValueFromPosition(upColumn + 4, 0, w, h, mode) +
-      v10 * getValueFromPosition(i - 4, 0, w, h, mode) +
-      v11 * getValueFromPosition(i, 0, w, h, mode) +
-      v12 * getValueFromPosition(i + 4, 0, w, h, mode) +
-      v20 * getValueFromPosition(downColumn - 4, 0, w, h, mode) +
-      v21 * getValueFromPosition(downColumn, 0, w, h, mode) +
-      v22 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
+    // Divide the result by the divisor, add the offset value and store value in shared memory
+    if(option === 0){
+      res1 /= divisor1;
+      store<u8>(i + byteSize, u8(res1));
+    } 
+    else if(option === 1){
+      resX /= divisorX;
+      resY /= divisorY;
+      const result = sqrt<f64>(resX * resX + resY * resY);
+      store<u8>(i + byteSize, u8(result));
+    } 
+    else if(option === 2){
+      res2 /= divisor2;
+      store<u8>(i + byteSize, u8(res2));
+    }
 
-    // Divide the result by the divisor and add the offset value
-    res /= divisor;
-    res += offset;
-
-    // Store the result in the output array
-    store<u8>(i + byteSize, u8(res));
   }
+
   return 0;
 }
 
@@ -639,14 +689,14 @@ export function edgeDetectionCanny(
   const gradientDirectionFirstIndex = byteSize * 3;
   
   // Step 1: Apply Grayscale
-  grayscale(byteSize, true);
+  // grayscale(byteSize, true);
 
   // Step 2: Apply Gaussian blur
   // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
   // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
   // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
   // convolveGaussian(byteSize, w, h, offset, mode, sigma, true);
-  convolveGaussian(byteSize, w, h, offset, mode, sigma, false);
+  // convolveGaussian(byteSize, w, h, offset, mode, sigma, false);
 
 
   // Step 3: Determine intensity gradients (Sobel filter) 
@@ -668,10 +718,6 @@ export function edgeDetectionCanny(
       const magnitude = <f32>(Math.hypot(gradientX, gradientY) || 0.0001);
       const direction = <f32>(Math.atan2(gradientY, gradientX));
       const idx = (y * w + x) * 4;
-      store<u8>(idx + 0 + byteSize, <u8>(gradientX));
-      store<u8>(idx + 1 + byteSize, <u8>(gradientX));
-      store<u8>(idx + 2 + byteSize, <u8>(gradientX));
-      store<u8>(idx + 3 + byteSize, 256);
       maxMagnitude = <f32>(Math.max(maxMagnitude, magnitude));
       store<f32>(gradientMagnitudeFirstIndex + idx, magnitude);
       store<f32>(gradientDirectionFirstIndex + idx, direction);

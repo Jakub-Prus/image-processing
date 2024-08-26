@@ -1,6 +1,7 @@
 import MainCanvas from './mainCanvas';
 
-import { OFFSET, MATRICES, PIXELMETHOD, TRANSFORM } from './constants.ts';
+import { OFFSET, MATRICES, PIXELMETHOD, TRANSFORM, CONVOLVEOPTIONS } from './constants.ts';
+import { getGaussianKernel } from './utils.ts';
 export default class Wasm {
   mainCanvas: MainCanvas;
   functions: any;
@@ -77,20 +78,54 @@ export default class Wasm {
     const mem = this.mem;
 
     Object.assign(this.functions, {
-      negative: transform(TRANSFORM.negative, imageData, ctx, mem, instance),
-      grayscale: transform(TRANSFORM.grayscale, imageData, ctx, mem, instance),
-      convolve: transform(TRANSFORM.convolve, imageData, ctx, mem, instance),
-      convolveGaussian: transform(TRANSFORM.convolveGaussian, imageData, ctx, mem, instance),
-      edgeDetection: transform(TRANSFORM.edgeDetection, imageData, ctx, mem, instance),
+      negative: transform(TRANSFORM.negative, imageData, ctx, mem, instance, []),
+      grayscale: transform(TRANSFORM.grayscale, imageData, ctx, mem, instance, ['onFirstSlot']),
+      convolve: transform(TRANSFORM.convolve, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+        'sizeOfKernel',
+        'usedSlots',
+        'option',
+        'sigma',
+        'slot3',
+        'slot4',
+      ]),
+      convolveGaussian: transform(TRANSFORM.convolveGaussian, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+        'sigma',
+        'onFirstSlot',
+      ]),
+      edgeDetection: transform(TRANSFORM.edgeDetection, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+      ]),
       edgeDetectionMatrix2: transform(
         TRANSFORM.edgeDetectionMatrix2,
         imageData,
         ctx,
         mem,
         instance,
+        ['width', 'height', 'offset', 'pixelMethod', 'matrix'],
       ),
-      edgeDetectionZero: transform(TRANSFORM.edgeDetectionZero, imageData, ctx, mem, instance),
-      edgeDetectionCanny: transform(TRANSFORM.edgeDetectionCanny, imageData, ctx, mem, instance),
+      edgeDetectionZero: transform(TRANSFORM.edgeDetectionZero, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+      ]),
+      edgeDetectionCanny: transform(TRANSFORM.edgeDetectionCanny, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+      ]),
     });
   }
 
@@ -100,10 +135,31 @@ export default class Wasm {
     ctx: CanvasRenderingContext2D,
     mem: Uint8Array,
     instance: WebAssembly.Instance,
+    argOrder: string[],
   ) {
-    return (...args: any) => {
+    return (options: any) => {
+      console.log('options', options);
       const data = imageData.data;
       const byteSize = data.length;
+      const filteredArgOrder = argOrder.filter(key => !key.startsWith('slot'));
+      const args = filteredArgOrder.map(key => options[key]);
+
+      // Load data into specific slots of memory
+      Object.keys(options).forEach(key => {
+        if (key.startsWith('slot')) {
+          const slotIndex = parseInt(key.substring(4)) - 1; // Assuming slot1, slot2, etc.
+          if (!isNaN(slotIndex) && slotIndex >= 0) {
+            const slotStart = slotIndex * byteSize;
+            console.log('slotStart', slotStart);
+            mem.set(options[key], slotStart);
+          }
+        }
+      });
+      console.log('args', args);
+      console.log(
+        'mem.subarray(byteSize * 2, byteSize * 3)',
+        mem.subarray(byteSize * 2, byteSize * 3),
+      );
 
       // Update imageData with current canvas content
       const currentImageData = ctx.getImageData(
@@ -173,46 +229,56 @@ export default class Wasm {
 
   async grayscale() {
     await this.ensureInitialized();
-    this.functions.grayscale(false);
+    this.functions.grayscale({ value: false });
   }
 
   async negative() {
     await this.ensureInitialized();
     this.functions.negative();
   }
-
   async gaussianBlur() {
     await this.ensureInitialized();
-    this.functions.convolveGaussian(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      1.6,
-      false,
-    );
+    this.functions.convolve({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 5,
+      usedSlots: 1,
+      option: CONVOLVEOPTIONS.convolve,
+      sigma: 1.6,
+      slot3: getGaussianKernel(5, 1.6, true),
+    });
   }
 
   async linearBlur() {
     await this.ensureInitialized();
-    this.functions.convolve(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      ...MATRICES.linear_blur,
-    );
+    this.functions.convolve({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 3,
+      usedSlots: 1,
+      option: CONVOLVEOPTIONS.convolve,
+      sigma: 0,
+      slot3: MATRICES.linear_blur,
+    });
   }
 
   async blur() {
     await this.ensureInitialized();
-    this.functions.convolve(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      ...MATRICES.blur,
-    );
+    this.functions.convolve({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 3,
+      usedSlots: 1,
+      option: CONVOLVEOPTIONS.convolve,
+      sigma: 0,
+      slot3: MATRICES.blur,
+    });
   }
 
   async edgeDetectionRoberts() {
@@ -229,26 +295,34 @@ export default class Wasm {
 
   async edgeDetectionSobel() {
     await this.ensureInitialized();
-    this.functions.edgeDetection(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      ...MATRICES.edge_sobel_x,
-      ...MATRICES.edge_sobel_y,
-    );
+    this.functions.convolve({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 5,
+      usedSlots: 1,
+      option: CONVOLVEOPTIONS.edgeDetection,
+      sigma: 0,
+      slot3: MATRICES.edge_sobel_x,
+      slot4: MATRICES.edge_sobel_y,
+    });
   }
 
   async edgeDetectionPrewitt() {
     await this.ensureInitialized();
-    this.functions.edgeDetection(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      ...MATRICES.edge_prewitt_x,
-      ...MATRICES.edge_prewitt_y,
-    );
+    this.functions.convolve({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 5,
+      usedSlots: 1,
+      option: CONVOLVEOPTIONS.edgeDetection,
+      sigma: 0,
+      slot3: MATRICES.edge_prewitt_x,
+      slot4: MATRICES.edge_prewitt_y,
+    });
   }
 
   async edgeDetectionZero() {
@@ -266,14 +340,17 @@ export default class Wasm {
   async edgeDetectionCanny() {
     await this.ensureInitialized();
     this.functions.grayscale(false);
-    this.functions.convolveGaussian(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      1.6,
-      false,
-    );
+    this.functions.convolve({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 5,
+      usedSlots: 1,
+      option: CONVOLVEOPTIONS.convolve,
+      sigma: 1.6,
+      slot3: getGaussianKernel(5, 1.6, true),
+    });
     this.functions.edgeDetection(
       this.mainCanvas.canvas.width,
       this.mainCanvas.canvas.height,

@@ -55,9 +55,15 @@ export const TRANSFORM = {
   negative: 'negative',
   grayscale: 'grayscale',
   convolve: 'convolve',
-  convolveGaussian: 'convolveGaussian',
+  convolveGaussian: 'gaussianBlur',
   edgeDetection: 'edgeDetection',
   edgeDetectionMatrix2: 'edgeDetectionMatrix2',
   edgeDetectionZero: 'edgeDetectionZero',
   edgeDetectionCanny: 'edgeDetectionCanny',
+};
+
+export const CONVOLVEOPTIONS = {
+  convolve: 0,
+  edgeDetection: 1,
+  gaussianBlur: 2,
 };
