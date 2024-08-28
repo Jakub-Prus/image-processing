@@ -132,7 +132,7 @@ export default class Wasm {
         'slot3',
         'slot4',
       ]),
-      manualThresholding: transform(TRANSFORM.manualThresholding, imageData, ctx, mem, instance, [
+      binarizationManualThresholding: transform(TRANSFORM.binarizationManualThresholding, imageData, ctx, mem, instance, [
         'width',
         'height',
         'offset',
@@ -380,9 +380,9 @@ export default class Wasm {
     });
   }
 
-  async manualThresholding() {
+  async binarizationManualThresholding() {
     await this.ensureInitialized();
-    this.functions.manualThresholding({
+    this.functions.binarizationManualThresholding({
       width: this.mainCanvas.canvas.width,
       height: this.mainCanvas.canvas.height,
       offset: OFFSET.blur,

@@ -835,7 +835,7 @@ for (let y = 1; y < h - 1; y++) {
   copyPartOfDataToSetMemory(gradientMagnitudeFirstIndex, byteSize * 6, byteSize);
 
 
-  // Step 4: Double thresholding
+  // Step 4: Double binarisation
   // for (let y = 0; y < h; y++) {
   //   for (let x = 0; x < w; x++) {
   //     const idx = ((y * w + x) * 4) + byteSize;
@@ -920,7 +920,7 @@ for (let y = 1; y < h - 1; y++) {
   // }
 }
 
-export function manualThresholding(
+export function binarizationManualThresholding(
   byteSize: i32,
   w: i32,
   h: i32,

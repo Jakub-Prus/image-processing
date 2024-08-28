@@ -117,9 +117,9 @@ export default class Menu {
       this.wasm.edgeDetectionCanny();
     });
 
-    const thresholdingManualBtn = document.getElementById('thresholding-manual-btn')!;
-    thresholdingManualBtn.addEventListener('click', () => {
-      this.wasm.manualThresholding();
+    const binarisationManualBtn = document.getElementById('binarisation-manual-btn')!;
+    binarisationManualBtn.addEventListener('click', () => {
+      this.wasm.binarizationManualThresholding();
     });
 
     const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;
@@ -157,12 +157,12 @@ export default class Menu {
       console.error('Dropdown menu elements not found. Please check your HTML structure.');
     }
 
-    const thresholdingButton = document.getElementById('thresholding-button');
-    const thresholdingMenu = document.getElementById('thresholding-menu');
+    const binarisationButton = document.getElementById('binarisation-button');
+    const binarisationMenu = document.getElementById('binarisation-menu');
 
-    if (thresholdingButton && thresholdingMenu) {
-      thresholdingButton.addEventListener('click', () => {
-        thresholdingMenu.classList.toggle('hidden');
+    if (binarisationButton && binarisationMenu) {
+      binarisationButton.addEventListener('click', () => {
+        binarisationMenu.classList.toggle('hidden');
       });
     } else {
       console.error('Dropdown menu elements not found. Please check your HTML structure.');

@@ -25,7 +25,7 @@ export default class MainCanvas {
     this.canvas.height = 512;
 
     const img = new Image();
-    img.src = '/img/hering.jpg';
+    img.src = '/img/lenna.png';
     img.crossOrigin = 'anonymous';
     img.onload = () => this.original(img);
   }
