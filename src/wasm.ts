@@ -24,7 +24,7 @@ export default class Wasm {
 
   // Memory structure
   // Blocks with same size // TODO can be optimized to not be same size for each block
-  // [original data][transformed data][data slot 1][data slot 2][data slot 3][debugData]
+  // [original data][transformed data][data slot 1(matrices)][data slot 2][data slot 3][data slot 4][debugData]
   async initialize() {
     if (this.instance) return; // Already initialized
 
@@ -36,7 +36,7 @@ export default class Wasm {
     );
     const data = imageData.data;
     const byteSize = data.length;
-    const initial = (6 * ((byteSize + 0xffff) & ~0xffff)) >>> 16;
+    const initial = (8 * ((byteSize + 0xffff) & ~0xffff)) >>> 16;
     this.memory = new WebAssembly.Memory({ initial });
 
     const importObject = {
@@ -125,6 +125,12 @@ export default class Wasm {
         'height',
         'offset',
         'pixelMethod',
+        'sizeOfKernel',
+        'usedSlots',
+        'lowThreshold',
+        'highThreshold',
+        'slot3',
+        'slot4',
       ]),
     });
   }
@@ -179,7 +185,7 @@ export default class Wasm {
       // Copy the response from the shared memory into the canvas imageData
       data.set(mem.subarray(byteSize, byteSize * 2));
       this.displayDebugData(
-        mem.subarray(byteSize * 5, byteSize * 6),
+        mem.subarray(byteSize * 6, byteSize * 7),
         this.mainCanvas.canvas.width,
         this.mainCanvas.canvas.height,
       );
@@ -351,24 +357,19 @@ export default class Wasm {
       sigma: 1.6,
       slot3: getGaussianKernel(5, 1.6, true),
     });
-    this.functions.edgeDetection(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      ...MATRICES.edge_sobel_x,
-      ...MATRICES.edge_sobel_y,
-    );
 
-    // this.functions.edgeDetectionCanny(
-    //   this.mainCanvas.canvas.width,
-    //   this.mainCanvas.canvas.height,
-    //   OFFSET.blur,
-    //   PIXELMETHOD.cyclicEdge,
-    //   1,
-    //   0.5,
-    //   0.9,
-    // );
+    this.functions.edgeDetectionCanny({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 3,
+      usedSlots: 2,
+      lowThreshold: 0.2,
+      highThreshold: 0.1,
+      slot3: MATRICES.edge_sobel_x,
+      slot4: MATRICES.edge_sobel_y,
+    });
 
     //   // Copy edge detection results back to image data
     //   data.set(this.mem.subarray(byteSize, 2 * byteSize));
