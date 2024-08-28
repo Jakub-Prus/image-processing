@@ -132,6 +132,13 @@ export default class Wasm {
         'slot3',
         'slot4',
       ]),
+      manualThresholding: transform(TRANSFORM.manualThresholding, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+        'threshold',
+      ]),
     });
   }
 
@@ -189,6 +196,7 @@ export default class Wasm {
         this.mainCanvas.canvas.width,
         this.mainCanvas.canvas.height,
       );
+      console.log('Final img data: ', mem.subarray(byteSize, byteSize * 2))
       ctx.putImageData(imageData, 0, 0);
     };
   }
@@ -370,10 +378,16 @@ export default class Wasm {
       slot3: MATRICES.edge_sobel_x,
       slot4: MATRICES.edge_sobel_y,
     });
+  }
 
-    //   // Copy edge detection results back to image data
-    //   data.set(this.mem.subarray(byteSize, 2 * byteSize));
-
-    //   this.ctx.putImageData(imageData, 0, 0);
+  async manualThresholding() {
+    await this.ensureInitialized();
+    this.functions.manualThresholding({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      threshold: 150,
+    });
   }
 }

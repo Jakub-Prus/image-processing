@@ -60,6 +60,7 @@ export const TRANSFORM = {
   edgeDetectionMatrix2: 'edgeDetectionMatrix2',
   edgeDetectionZero: 'edgeDetectionZero',
   edgeDetectionCanny: 'edgeDetectionCanny',
+  manualThresholding: 'manualThresholding',
 };
 
 export const CONVOLVEOPTIONS = {

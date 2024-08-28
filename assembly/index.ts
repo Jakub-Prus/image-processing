@@ -209,7 +209,7 @@ function getValueFromPosition(pos: i32, offset: i32, w: i32, h: i32, mode: i32):
 }
 
 @inline
-function addConvolveValueGrayscale(pos: i32, length: i32, w: i32, h: i32, mode: i32): f64 {
+function getPixelValueGrayscale(pos: i32, length: i32, w: i32, h: i32, mode: i32): f64 {
   const newPosition = getPixelByMode(pos, w, h, mode);
   if(newPosition < 0) {
     return 0
@@ -652,7 +652,7 @@ function applyLaplacianOfGaussian(
           if (px >= 0 && px < w && py >= 0 && py < h) {
             const i = (py * w + px) * 4;
             const kernelValue = load<f64>(kernelOffset + (ky * kernelSize + kx) * 8);
-            sum += kernelValue * addConvolveValueGrayscale(i, byteSize, w, h, mode);
+            sum += kernelValue * getPixelValueGrayscale(i, byteSize, w, h, mode);
           }
         }
       }
@@ -918,4 +918,31 @@ for (let y = 1; y < h - 1; y++) {
   //     }
   //   }
   // }
+}
+
+export function manualThresholding(
+  byteSize: i32,
+  w: i32,
+  h: i32,
+  offset: i32,
+  mode: i32,
+  threshold: u8,
+): i32 {
+  for (let i = 0; i < byteSize; i += 4) {
+    const pos = i + byteSize;
+    const avg = u8(0.3 * load<u8>(i) + 0.59 * load<u8>(i + 1) + 0.11 * load<u8>(i + 2));
+    if(avg < threshold){
+      store<u8>(pos + 0, 0);
+      store<u8>(pos + 1, 0);
+      store<u8>(pos + 2, 0);
+      store<u8>(pos + 3, 255);
+    } else {
+      store<u8>(pos + 0, 255);
+      store<u8>(pos + 1, 255);
+      store<u8>(pos + 2, 255);
+      store<u8>(pos + 3, 255);
+
+    }
+  }
+  return 0;
 }

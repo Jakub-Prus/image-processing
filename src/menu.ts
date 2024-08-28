@@ -116,6 +116,12 @@ export default class Menu {
     edgeCannyBtn.addEventListener('click', () => {
       this.wasm.edgeDetectionCanny();
     });
+
+    const thresholdingManualBtn = document.getElementById('thresholding-manual-btn')!;
+    thresholdingManualBtn.addEventListener('click', () => {
+      this.wasm.manualThresholding();
+    });
+
     const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;
     downloadDebugImgBtn.addEventListener('click', () => {
       const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
@@ -146,6 +152,17 @@ export default class Menu {
     if (blurButton && blurMenu) {
       blurButton.addEventListener('click', () => {
         blurMenu.classList.toggle('hidden');
+      });
+    } else {
+      console.error('Dropdown menu elements not found. Please check your HTML structure.');
+    }
+
+    const thresholdingButton = document.getElementById('thresholding-button');
+    const thresholdingMenu = document.getElementById('thresholding-menu');
+
+    if (thresholdingButton && thresholdingMenu) {
+      thresholdingButton.addEventListener('click', () => {
+        thresholdingMenu.classList.toggle('hidden');
       });
     } else {
       console.error('Dropdown menu elements not found. Please check your HTML structure.');
