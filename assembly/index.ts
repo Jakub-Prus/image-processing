@@ -327,7 +327,8 @@ export function convolve(
     else if(option === 1){
       resX /= divisorX;
       resY /= divisorY;
-      const result = sqrt<f64>(resX * resX + resY * resY);
+      let result = sqrt<f64>(resX * resX + resY * resY);
+      result = max(255, result);
       store<u8>(i + byteSize, u8(result));
     } 
     else if(option === 2){
@@ -494,64 +495,6 @@ export function edgeDetection(
     resY /= divisorY;
 
     const result = sqrt<f64>(resX * resX + resY * resY);
-
-    // Store the result in the output array
-    store<u8>(i + byteSize, u8(result));
-  }
-  return 0;
-}
-
-export function edgeDetectionMatrix2(
-  byteSize: i32,
-  w: i32,
-  h: i32,
-  offset: i32,
-  mode: i32,
-  vx00: i32,
-  vx01: i32,
-  vx10: i32,
-  vx11: i32,
-  vy00: i32,
-  vy01: i32,
-  vy10: i32,
-  vy11: i32,
-): i32 {
-  // Calculate the sum of the kernel values to use as a divisor
-  let divisorX = vx00 + vx01 + vx10 + vx11 || 1;
-  let divisorY = vy00 + vy01 + vy10 + vy11 || 1;
-
-  // Loop through each element in the array
-  for (let i = 0; i < byteSize; i++) {
-    // Every fourth element is stored as-is, meaning Alpha channel
-    if (((i + 1) & 3) == 0) {
-      store<u8>(i + byteSize, load<u8>(i));
-      continue;
-    }
-    // Calculate the stride, or the distance between elements in the same column
-    let stride = w * 4;
-
-    // Calculate the indices of the previous and next elements in the same column
-    let upColumn = i - stride;
-    let downColumn = i + stride;
-
-    //  Perform the convolution operation using the 2x2 kernel and the getValueFromPosition helper function
-    let resX =
-      vx00 * getValueFromPosition(i, 0, w, h, mode) +
-      vx01 * getValueFromPosition(i + 4, 0, w, h, mode) +
-      vx10 * getValueFromPosition(downColumn, 0, w, h, mode) +
-      vx11 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
-
-    let resY =
-      vy00 * getValueFromPosition(i, 0, w, h, mode) +
-      vy01 * getValueFromPosition(i + 4, 0, w, h, mode) +
-      vy10 * getValueFromPosition(downColumn, 0, w, h, mode) +
-      vy11 * getValueFromPosition(downColumn + 4, 0, w, h, mode);
-
-    // Divide the result by the divisor and add the offset value
-    resX /= divisorX;
-    resY /= divisorY;
-
-    const result = sqrt<f64>(resX * resX + resY * resY) * 4;
 
     // Store the result in the output array
     store<u8>(i + byteSize, u8(result));

@@ -106,19 +106,13 @@ export default class Wasm {
         'offset',
         'pixelMethod',
       ]),
-      edgeDetectionMatrix2: transform(
-        TRANSFORM.edgeDetectionMatrix2,
-        imageData,
-        ctx,
-        mem,
-        instance,
-        ['width', 'height', 'offset', 'pixelMethod', 'matrix'],
-      ),
       edgeDetectionZero: transform(TRANSFORM.edgeDetectionZero, imageData, ctx, mem, instance, [
         'width',
         'height',
         'offset',
         'pixelMethod',
+        'sigma',
+        't',
       ]),
       edgeDetectionCanny: transform(TRANSFORM.edgeDetectionCanny, imageData, ctx, mem, instance, [
         'width',
@@ -132,13 +126,14 @@ export default class Wasm {
         'slot3',
         'slot4',
       ]),
-      binarizationManualThresholding: transform(TRANSFORM.binarizationManualThresholding, imageData, ctx, mem, instance, [
-        'width',
-        'height',
-        'offset',
-        'pixelMethod',
-        'threshold',
-      ]),
+      binarizationManualThresholding: transform(
+        TRANSFORM.binarizationManualThresholding,
+        imageData,
+        ctx,
+        mem,
+        instance,
+        ['width', 'height', 'offset', 'pixelMethod', 'threshold'],
+      ),
     });
   }
 
@@ -196,7 +191,7 @@ export default class Wasm {
         this.mainCanvas.canvas.width,
         this.mainCanvas.canvas.height,
       );
-      console.log('Final img data: ', mem.subarray(byteSize, byteSize * 2))
+      console.log('Final img data: ', data)
       ctx.putImageData(imageData, 0, 0);
     };
   }
@@ -297,14 +292,18 @@ export default class Wasm {
 
   async edgeDetectionRoberts() {
     await this.ensureInitialized();
-    this.functions.edgeDetectionMatrix2(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      ...MATRICES.edge_roberts_x,
-      ...MATRICES.edge_roberts_y,
-    );
+    this.functions.convolve({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sizeOfKernel: 2,
+      usedSlots: 2,
+      option: CONVOLVEOPTIONS.edgeDetection,
+      sigma: 0,
+      slot3: MATRICES.edge_roberts_x,
+      slot4: MATRICES.edge_roberts_y,
+    });
   }
 
   async edgeDetectionSobel() {
@@ -314,8 +313,8 @@ export default class Wasm {
       height: this.mainCanvas.canvas.height,
       offset: OFFSET.blur,
       pixelMethod: PIXELMETHOD.cyclicEdge,
-      sizeOfKernel: 5,
-      usedSlots: 1,
+      sizeOfKernel: 3,
+      usedSlots: 2,
       option: CONVOLVEOPTIONS.edgeDetection,
       sigma: 0,
       slot3: MATRICES.edge_sobel_x,
@@ -330,7 +329,7 @@ export default class Wasm {
       height: this.mainCanvas.canvas.height,
       offset: OFFSET.blur,
       pixelMethod: PIXELMETHOD.cyclicEdge,
-      sizeOfKernel: 5,
+      sizeOfKernel: 3,
       usedSlots: 1,
       option: CONVOLVEOPTIONS.edgeDetection,
       sigma: 0,
@@ -341,14 +340,14 @@ export default class Wasm {
 
   async edgeDetectionZero() {
     await this.ensureInitialized();
-    this.functions.edgeDetectionZero(
-      this.mainCanvas.canvas.width,
-      this.mainCanvas.canvas.height,
-      OFFSET.blur,
-      PIXELMETHOD.cyclicEdge,
-      1.6,
-      5,
-    );
+    this.functions.edgeDetectionZero({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      sigma: 5,
+      t: 1,
+    });
   }
 
   async edgeDetectionCanny() {
