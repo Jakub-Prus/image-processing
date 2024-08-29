@@ -119,7 +119,12 @@ export default class Menu {
 
     const binarisationManualBtn = document.getElementById('binarisation-manual-btn')!;
     binarisationManualBtn.addEventListener('click', () => {
-      this.wasm.binarizationManualThresholding();
+      this.wasm.binarizationManual();
+    });
+
+    const binarisationGradientBtn = document.getElementById('binarisation-gradient-btn')!;
+    binarisationGradientBtn.addEventListener('click', () => {
+      this.wasm.binarizationGradient();
     });
 
     const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;

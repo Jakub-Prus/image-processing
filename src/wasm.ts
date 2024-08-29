@@ -1,6 +1,13 @@
 import MainCanvas from './mainCanvas';
 
-import { OFFSET, MATRICES, PIXELMETHOD, TRANSFORM, CONVOLVEOPTIONS } from './constants.ts';
+import {
+  OFFSET,
+  MATRICES,
+  PIXELMETHOD,
+  TRANSFORM,
+  CONVOLVEOPTIONS,
+  BINARIZATIONMETHOD,
+} from './constants.ts';
 import { getGaussianKernel } from './utils.ts';
 export default class Wasm {
   mainCanvas: MainCanvas;
@@ -126,14 +133,14 @@ export default class Wasm {
         'slot3',
         'slot4',
       ]),
-      binarizationManualThresholding: transform(
-        TRANSFORM.binarizationManualThresholding,
-        imageData,
-        ctx,
-        mem,
-        instance,
-        ['width', 'height', 'offset', 'pixelMethod', 'threshold'],
-      ),
+      binarization: transform(TRANSFORM.binarization, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+        'binarizationMethod',
+        'threshold',
+      ]),
     });
   }
 
@@ -191,7 +198,7 @@ export default class Wasm {
         this.mainCanvas.canvas.width,
         this.mainCanvas.canvas.height,
       );
-      console.log('Final img data: ', data)
+      console.log('Final img data: ', data);
       ctx.putImageData(imageData, 0, 0);
     };
   }
@@ -379,14 +386,27 @@ export default class Wasm {
     });
   }
 
-  async binarizationManualThresholding() {
+  async binarizationManual() {
     await this.ensureInitialized();
-    this.functions.binarizationManualThresholding({
+    this.functions.binarization({
       width: this.mainCanvas.canvas.width,
       height: this.mainCanvas.canvas.height,
       offset: OFFSET.blur,
       pixelMethod: PIXELMETHOD.cyclicEdge,
+      binarizationMethod: BINARIZATIONMETHOD.manual,
       threshold: 150,
+    });
+  }
+
+  async binarizationGradient() {
+    await this.ensureInitialized();
+    this.functions.binarization({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      binarizationMethod: BINARIZATIONMETHOD.gradient,
+      threshold: 0,
     });
   }
 }

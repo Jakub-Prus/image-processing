@@ -863,18 +863,35 @@ for (let y = 1; y < h - 1; y++) {
   // }
 }
 
-export function binarizationManualThresholding(
+export function binarization(
   byteSize: i32,
   w: i32,
   h: i32,
   offset: i32,
   mode: i32,
-  threshold: u8,
+  binarizationMethod: i32,
+  threshold: i32
 ): i32 {
+  grayscale(byteSize, true);
+  let thresholdValue = <f64>(threshold);
+  
+  if(binarizationMethod === 1) {
+    let sumGradient = 0.0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = (y * w + x) * 4;
+        const Gx = getValueFromPosition(idx + 4, 0, w, h, mode);
+        const Gy = getValueFromPosition(idx - 4, 0, w, h, mode);
+        const I = getValueFromPosition(idx - 4, 0, w, h, mode);
+        sumGradient = (max(Gx, Gy) * I) / max(Gx, Gy);
+      }
+    }
+    thresholdValue = sumGradient;
+  }
+
   for (let i = 0; i < byteSize; i += 4) {
     const pos = i + byteSize;
-    const avg = u8(0.3 * load<u8>(i) + 0.59 * load<u8>(i + 1) + 0.11 * load<u8>(i + 2));
-    if(avg < threshold){
+    if(<f64>(load<u8>(i)) < thresholdValue){
       store<u8>(pos + 0, 0);
       store<u8>(pos + 1, 0);
       store<u8>(pos + 2, 0);

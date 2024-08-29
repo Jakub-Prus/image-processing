@@ -60,11 +60,19 @@ export const TRANSFORM = {
   edgeDetectionMatrix2: 'edgeDetectionMatrix2',
   edgeDetectionZero: 'edgeDetectionZero',
   edgeDetectionCanny: 'edgeDetectionCanny',
-  binarizationManualThresholding: 'binarizationManualThresholding',
+  binarization: 'binarization',
 };
 
 export const CONVOLVEOPTIONS = {
   convolve: 0,
   edgeDetection: 1,
   gaussianBlur: 2,
+};
+
+export const BINARIZATIONMETHOD = {
+  manual: 0,
+  gradient: 1,
+  iterativeBimodal: 2,
+  otsu: 3,
+  niblack: 4,
 };
