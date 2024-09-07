@@ -116,6 +116,10 @@ export default class Menu {
     edgeCannyBtn.addEventListener('click', () => {
       this.wasm.edgeDetectionCanny();
     });
+    const edgeDetectionHoughBtn = document.getElementById('edge-hough-transform-btn')!;
+    edgeDetectionHoughBtn.addEventListener('click', () => {
+      this.wasm.edgeDetectionHough();
+    });
 
     const binarisationManualBtn = document.getElementById('binarisation-manual-btn')!;
     binarisationManualBtn.addEventListener('click', () => {

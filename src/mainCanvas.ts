@@ -25,7 +25,7 @@ export default class MainCanvas {
     this.canvas.height = 512;
 
     const img = new Image();
-    img.src = '/img/lenna.png';
+    img.src = '/img/triangle_256x256.png';
     img.crossOrigin = 'anonymous';
     img.onload = () => this.original(img);
   }

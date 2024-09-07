@@ -6,6 +6,7 @@ declare function print(n: any): void;
 declare function printString(n: String): void;
 declare function printF64(n: f64): void;
 declare function printI32(n: i32): void;
+declare function printI64(n: i64): void;
 declare function printU8(n: u8): void;
 
 @inline
@@ -904,5 +905,85 @@ export function binarization(
 
     }
   }
+  return 0;
+}
+
+// Memory structure
+// [imgData][finalImgData][houghMatrix]
+export function edgeDetectionHough(
+  byteSize: i32,
+  w: i32,
+  h: i32,
+  offset: i32,
+  mode: i32,
+  skipEdgeDetection: i32,
+  density: i32,
+  rhoMax: f64,
+  thetaSize: f64
+): i32 {
+  const houghMatrixFirstIndex = byteSize * 3;
+  const houghMatrixSize = i32(thetaSize * (rhoMax * 2 + 1));
+
+  printF64(rhoMax);
+  printF64(thetaSize);
+  printF64(f64(houghMatrixSize));
+  printF64(f64(houghMatrixFirstIndex));
+
+  let max: u32 = 0;
+  let maxIndex: i32 = 0;
+
+  memory.fill(houghMatrixFirstIndex, 0, houghMatrixSize * 4);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const pixelValue = load<u8>(i);
+
+      if (pixelValue > 0) {
+        for (let k = 0; k < thetaSize; k++) {
+          const theta = (k * Math.PI) / (density * 180);
+          const rho = x * Math.cos(theta) + y * Math.sin(theta);
+
+          const rhoIndex = Math.round(rho + rhoMax);
+          if (rhoIndex >= 0 && rhoIndex < rhoMax * 2 + 1) {
+            const houghIdx = i32(k * (rhoMax * 2 + 1) + rhoIndex);
+            const currentHoughValue = load<u32>(houghMatrixFirstIndex + houghIdx * 4);
+            const newHoughValue = currentHoughValue + 1;
+            store<u32>(houghMatrixFirstIndex + houghIdx * 4, newHoughValue);
+
+            if (newHoughValue > max) {
+              max = newHoughValue;
+              maxIndex = houghIdx;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  printF64(f64(max));
+  printF64(f64(maxIndex));
+
+  let minHoughValue: u32 = u32.MAX_VALUE;
+  let maxHoughValue: u32 = 0;
+  for (let i = 0; i < houghMatrixSize; i++) {
+    const houghValue = load<u32>(houghMatrixFirstIndex + i * 4);
+    if (houghValue < minHoughValue) {
+      minHoughValue = houghValue;
+    }
+    if (houghValue > maxHoughValue) {
+      maxHoughValue = houghValue;
+    }
+  }
+
+  for (let i = 0; i < houghMatrixSize; i++) {
+    const houghValue = load<u32>(houghMatrixFirstIndex + i * 4);
+    const normalizedHoughValue = u8(((f64(houghValue - minHoughValue) / f64(maxHoughValue - minHoughValue)) * 255));
+    store<u8>(i * 4 + 0, normalizedHoughValue);
+    store<u8>(i * 4 + 1, normalizedHoughValue);
+    store<u8>(i * 4 + 2, normalizedHoughValue);
+    store<u8>(i * 4 + 3, 255);
+  }
+
   return 0;
 }
