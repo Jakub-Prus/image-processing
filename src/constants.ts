@@ -62,6 +62,7 @@ export const TRANSFORM = {
   edgeDetectionCanny: 'edgeDetectionCanny',
   binarization: 'binarization',
   edgeDetectionHough: 'edgeDetectionHough',
+  segmentationWatershed: 'segmentationWatershed',
 };
 
 export const CONVOLVEOPTIONS = {

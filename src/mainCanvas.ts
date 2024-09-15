@@ -25,7 +25,7 @@ export default class MainCanvas {
     this.canvas.height = 512;
 
     const img = new Image();
-    img.src = '/img/triangle_256x256.png';
+    img.src = '/img/testImg.png';
     img.crossOrigin = 'anonymous';
     img.onload = () => this.original(img);
   }
@@ -124,5 +124,22 @@ export default class MainCanvas {
     }
     this.isGrayscale = true;
     return;
+  }
+
+  getLuminosityValues(): number[] {
+    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    const luminosityArray: number[] = [];
+
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+
+      // Calculate luminosity using the formula: 0.299R + 0.587G + 0.114B
+      const luminosity = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+      luminosityArray.push(luminosity);
+    }
+
+    return luminosityArray;
   }
 }

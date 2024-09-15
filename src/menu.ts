@@ -131,6 +131,12 @@ export default class Menu {
       this.wasm.binarizationGradient();
     });
 
+    const segmentationWatershedBtn = document.getElementById('segmentation-watershed-btn')!;
+    segmentationWatershedBtn.addEventListener('click', () => {
+      this.wasm.gaussianBlur();
+      setTimeout(() => this.transformation.watershedByImmersion(), 400);
+    });
+
     const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;
     downloadDebugImgBtn.addEventListener('click', () => {
       const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
@@ -172,6 +178,17 @@ export default class Menu {
     if (binarisationButton && binarisationMenu) {
       binarisationButton.addEventListener('click', () => {
         binarisationMenu.classList.toggle('hidden');
+      });
+    } else {
+      console.error('Dropdown menu elements not found. Please check your HTML structure.');
+    }
+
+    const segmentationButton = document.getElementById('segmentation-button');
+    const segmentationMenu = document.getElementById('segmentation-menu');
+
+    if (segmentationButton && segmentationMenu) {
+      segmentationButton.addEventListener('click', () => {
+        segmentationMenu.classList.toggle('hidden');
       });
     } else {
       console.error('Dropdown menu elements not found. Please check your HTML structure.');
