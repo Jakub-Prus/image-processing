@@ -284,12 +284,28 @@ export default class Transformation {
    * https://www.researchgate.net/publication/2879434_The_Watershed_Transform_Definitions_Algorithms_and_Parallelization_Strategies
    */
   watershedByImmersion() {
+    const imgData = this.mainCanvas.getGrayscaleImageData();
+    const gaussianBlurKernel = this.createGaussianBlurKernel(3, 1.6);
+    const blurredImage = this.applyKernel(imgData, gaussianBlurKernel, false) as ImageData;
+
+    const luminosityArray: number[] = [];
+
+    for (let i = 0; i < blurredImage.data.length; i += 4) {
+      const r = blurredImage.data[i];
+      const g = blurredImage.data[i + 1];
+      const b = blurredImage.data[i + 2];
+
+      // Calculate luminosity using the formula: 0.299R + 0.587G + 0.114B
+      const luminosity = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+      luminosityArray.push(luminosity);
+    }
+
     const G = {
       D: Array.from(
         { length: this.mainCanvas.canvas.width * this.mainCanvas.canvas.height },
         (_, i) => [i % this.mainCanvas.canvas.width, Math.floor(i / this.mainCanvas.canvas.width)],
       ),
-      im: this.mainCanvas.getLuminosityValues(),
+      im: luminosityArray,
     };
 
     const start = performance.now();
