@@ -137,6 +137,11 @@ export default class Menu {
       setTimeout(() => this.transformation.watershedByImmersion(), 400);
     });
 
+    const characteristicsCornersBtn = document.getElementById('characteristics-corners-btn')!;
+    characteristicsCornersBtn.addEventListener('click', () => {
+      this.transformation.harrisCornerDetection(1, 0.76, 0.05, 3000000);
+    });
+
     const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;
     downloadDebugImgBtn.addEventListener('click', () => {
       const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
@@ -200,6 +205,17 @@ export default class Menu {
     if (histogramButton && histogramMenu) {
       histogramButton.addEventListener('click', () => {
         histogramMenu.classList.toggle('hidden');
+      });
+    } else {
+      console.error('Dropdown menu elements not found. Please check your HTML structure.');
+    }
+
+    const characteristicsButton = document.getElementById('characteristics-button');
+    const characteristicsMenu = document.getElementById('characteristics-menu');
+
+    if (characteristicsButton && characteristicsMenu) {
+      characteristicsButton.addEventListener('click', () => {
+        characteristicsMenu.classList.toggle('hidden');
       });
     } else {
       console.error('Dropdown menu elements not found. Please check your HTML structure.');

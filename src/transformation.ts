@@ -1,6 +1,6 @@
 import Histogram from './histogram';
 import MainCanvas from './mainCanvas';
-import { PIXELMETHOD } from './constants.ts';
+import { MATRICES, PIXELMETHOD } from './constants.ts';
 
 export default class Transformation {
   mainCanvas: MainCanvas;
@@ -466,5 +466,237 @@ export default class Transformation {
   // Converts 2D coordinates to a 1D index
   _getIndex(p: number[]): number {
     return p[0] + p[1] * this.canvasWidth;
+  }
+
+  /**
+   * Harris algorithm - corners detection
+   */
+  harrisCornerDetection(
+    sigma: number = 1.6,
+    sigmaWeight: number = 0.76,
+    kParam: number = 0.05,
+    threshold: number = 3000000,
+  ): void {
+    const width = this.mainCanvas.canvas.width;
+    const height = this.mainCanvas.canvas.height;
+    const image: ImageData = this.mainCanvas.getGrayscaleImageData();
+    const cornerCandidates: number[] = new Array(width * height).fill(0);
+
+    // Step 1: Apply Gaussian Blur
+    const gaussianBlurKernel = this.createGaussianBlurKernel(3, sigma);
+    const blurredImage = this.applyKernel(image, gaussianBlurKernel, false) as ImageData;
+
+    // Step 2: Compute image gradients using Sobel operator
+    const Gx = this.applyKernel(blurredImage, MATRICES.edge_sobel_x, true) as number[];
+    const Gy = this.applyKernel(blurredImage, MATRICES.edge_sobel_y, true) as number[];
+
+    const Ixx: number[] = new Array(width * height).fill(0);
+    const Iyy: number[] = new Array(width * height).fill(0);
+    const Ixy: number[] = new Array(width * height).fill(0);
+
+    // Step 3: Calculate Ixx, Iyy, and Ixy
+    for (let i = 0; i < width * height; i++) {
+      Ixx[i] = Gx[i] * Gx[i];
+      Iyy[i] = Gy[i] * Gy[i];
+      Ixy[i] = Gx[i] * Gy[i];
+    }
+
+    const Sxx: number[] = new Array(width * height).fill(0);
+    const Syy: number[] = new Array(width * height).fill(0);
+    const Sxy: number[] = new Array(width * height).fill(0);
+
+    // Step 4: Calculate Sxx, Syy, and Sxy
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        let sumSxx = 0;
+        let sumSyy = 0;
+        let sumSxy = 0;
+
+        for (let ky = -1; ky <= 1; ky++) {
+          for (let kx = -1; kx <= 1; kx++) {
+            const index = (y + ky) * width + (x + kx);
+            const gauss = this.getGauss(kx, ky, sigma);
+            if (index < 0 || index > Ixx.length) {
+              console.log(index);
+              continue;
+            }
+
+            sumSxx += Ixx[index] * gauss;
+            sumSyy += Iyy[index] * gauss;
+            sumSxy += Ixy[index] * gauss;
+          }
+        }
+
+        Sxx[y * width + x] = sumSxx / sigmaWeight;
+        Syy[y * width + x] = sumSyy / sigmaWeight;
+        Sxy[y * width + x] = sumSxy / sigmaWeight;
+      }
+    }
+
+    // Step 5: Calculate Harris Response
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const index = y * width + x;
+
+        const detH = Sxx[index] * Syy[index] - Sxy[index] * Sxy[index];
+        const traceH = Sxx[index] + Syy[index];
+
+        const R = detH - kParam * (traceH * traceH);
+
+        if (R > threshold) {
+          cornerCandidates[index] = R;
+        }
+      }
+    }
+
+    // Step 6: Non-maximum suppression
+    const cornerSuppressed = this.nonMaxSuppression(cornerCandidates, width, height);
+
+    // Step 6: Corner map visualization
+    const cornerMap: number[] = new Array(width * height).fill(0);
+    console.log('cornerMap', cornerMap);
+    for (let i = 0; i < cornerSuppressed.length; i++) {
+      if (cornerSuppressed[i] > 0) {
+        cornerMap[i] = 255;
+      } else {
+        cornerMap[i] = 0;
+      }
+    }
+
+    // Step 6: Visualization of detected corners
+    const resultImageData = new ImageData(width, height);
+    for (let i = 0; i < cornerMap.length; i++) {
+      resultImageData.data[i * 4] = cornerMap[i];
+      resultImageData.data[i * 4 + 1] = cornerMap[i];
+      resultImageData.data[i * 4 + 2] = cornerMap[i];
+      resultImageData.data[i * 4 + 3] = 255; // Full opacity
+    }
+
+    this.ctx.putImageData(resultImageData, 0, 0);
+  }
+
+  getGauss(x: number, y: number, sigma: number): number {
+    const sigma2 = sigma * sigma;
+    const numerator = x * x + y * y;
+    const exponent = -numerator / (2.0 * sigma2);
+    const expValue = Math.exp(exponent);
+    const result = expValue / (2.0 * Math.PI * sigma2);
+    return result;
+  }
+
+  createGaussianBlurKernel(kernelSize: number = 3, sigma: number = 1.6): number[] {
+    const kernel = new Array(kernelSize * kernelSize).fill(0);
+    const center = Math.floor(kernelSize / 2);
+    let sum = 0;
+
+    for (let y = 0; y < kernelSize; y++) {
+      for (let x = 0; x < kernelSize; x++) {
+        const dx = x - center;
+        const dy = y - center;
+        const gaussian = Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
+        kernel[y * kernelSize + x] = gaussian;
+        sum += gaussian;
+      }
+    }
+
+    // Normalize the kernel
+    for (let i = 0; i < kernel.length; i++) {
+      kernel[i] /= sum;
+    }
+
+    return kernel;
+  }
+
+  applyKernel(
+    imgData: ImageData,
+    kernel: string | any[],
+    resultArray: boolean,
+  ): ImageData | number[] {
+    const width = imgData.width;
+    const height = imgData.height;
+    const srcData = imgData.data;
+    const outputArray = new Array(width, height);
+    const output = new ImageData(width, height);
+    const outputData = output.data;
+
+    const kernelSize = Math.sqrt(kernel.length);
+    const half = Math.floor(kernelSize / 2);
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        let r = 0,
+          g = 0,
+          b = 0,
+          a = 0;
+
+        for (let ky = -half; ky <= half; ky++) {
+          for (let kx = -half; kx <= half; kx++) {
+            const kernelValue = kernel[(ky + half) * kernelSize + (kx + half)];
+
+            const px = x + kx;
+            const py = y + ky;
+
+            // Handle image bounds cases
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+              const srcIndex = (py * width + px) * 4;
+              r += srcData[srcIndex] * kernelValue;
+              g += srcData[srcIndex + 1] * kernelValue;
+              b += srcData[srcIndex + 2] * kernelValue;
+              a += srcData[srcIndex + 3] * kernelValue;
+            }
+          }
+        }
+
+        if (resultArray) {
+          const dstIndex = y * width + x;
+          outputArray[dstIndex] = r;
+        } else {
+          const dstIndex = (y * width + x) * 4;
+          outputData[dstIndex] = r;
+          outputData[dstIndex + 1] = g;
+          outputData[dstIndex + 2] = b;
+          outputData[dstIndex + 3] = a;
+        }
+      }
+    }
+    if (resultArray) {
+      return outputArray;
+    } else {
+      return output;
+    }
+  }
+
+  nonMaxSuppression(cornerCandidates: number[], width: number, height: number): number[] {
+    const suppressed: number[] = new Array(width * height).fill(0);
+
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const index = y * width + x;
+        const currentValue = cornerCandidates[index];
+
+        let isMax = true;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const index = (y + dy) * width + (x + dx);
+            if (dx === 0 && dy === 0) continue;
+            if (index < 0 && index > cornerCandidates.length) continue;
+            const neighborValue = cornerCandidates[index];
+            if (neighborValue > currentValue) {
+              isMax = false;
+              break;
+            }
+          }
+          if (!isMax) break;
+        }
+
+        if (isMax) {
+          suppressed[index] = currentValue;
+        } else {
+          suppressed[index] = 0;
+        }
+      }
+    }
+
+    return suppressed;
   }
 }

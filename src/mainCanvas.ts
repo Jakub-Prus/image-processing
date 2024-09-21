@@ -25,7 +25,7 @@ export default class MainCanvas {
     this.canvas.height = 512;
 
     const img = new Image();
-    img.src = '/img/testImg.png';
+    img.src = '/img/shapes_261x221.png';
     img.crossOrigin = 'anonymous';
     img.onload = () => this.original(img);
   }
@@ -58,6 +58,20 @@ export default class MainCanvas {
 
   getImageData() {
     const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    return imageData;
+  }
+
+  getGrayscaleImageData(): ImageData {
+    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    const pixels = imageData.data;
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      const gray = Math.floor(pixels[i] * 0.2126 + pixels[i + 1] * 0.7152 + pixels[i + 2] * 0.0722);
+      pixels[i] = gray;
+      pixels[i + 1] = gray;
+      pixels[i + 2] = gray;
+    }
+
     return imageData;
   }
 
