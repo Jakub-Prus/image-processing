@@ -568,7 +568,7 @@ export default class Transformation {
     // Step 6: Non-maximum suppression
     const cornerSuppressed = this.nonMaxSuppression(cornerCandidates, width, height);
 
-    // Step 6: Corner map visualization
+    // Step 7: Corner map visualization
     const cornerMap: number[] = new Array(width * height).fill(0);
     console.log('cornerMap', cornerMap);
     for (let i = 0; i < cornerSuppressed.length; i++) {
@@ -714,5 +714,100 @@ export default class Transformation {
     }
 
     return suppressed;
+  }
+
+  edgeDetectionHough(density: number, skipEdgeDetection = false) {
+    const width = this.mainCanvas.canvas.width;
+    const height = this.mainCanvas.canvas.height;
+    const image = this.mainCanvas.getGrayscaleImageData();
+
+    let edgeDetectedImage = new Array(width * height).fill(0);
+
+    // Step 1: Perform edge detection
+    if (!skipEdgeDetection) {
+      const Gx = this.applyKernel(image, MATRICES.edge_sobel_x, true) as number[];
+      const Gy = this.applyKernel(image, MATRICES.edge_sobel_y, true) as number[];
+
+      for (let i = 0; i < width * height; i++) {
+        const gradientMagnitude = Math.sqrt(Gx[i] * Gx[i] + Gy[i] * Gy[i]);
+        edgeDetectedImage[i] = gradientMagnitude > 128 ? 255 : 0;
+      }
+    } else {
+      for (let i = 0; i < width * height; i++) {
+        const grayValue = image.data[i * 4];
+        edgeDetectedImage[i] = grayValue > 128 ? 255 : 0;
+      }
+    }
+
+    // Step 2: Initialize Hough transform parameters
+    const rhoMax = Math.floor(Math.sqrt(width * width + height * height));
+    const thetaSize = 180 * density;
+
+    // Step 3: Create and populate the Hough matrix
+    const houghMatrix = new Array((rhoMax * 2 + 1) * thetaSize).fill(0);
+    let minHoughValue = Infinity;
+    let maxHoughValue = -Infinity;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = y * width + x;
+
+        if (edgeDetectedImage[i] > 0) {
+          for (let k = 0; k < thetaSize; k++) {
+            const theta = (k * Math.PI) / (density * 180);
+            const rho = Math.round(x * Math.cos(theta) + y * Math.sin(theta));
+            const houghIdx = k + (rho + rhoMax) * thetaSize;
+
+            houghMatrix[houghIdx] += 1;
+            maxHoughValue = Math.max(houghMatrix[houghIdx], maxHoughValue);
+            minHoughValue = Math.min(houghMatrix[houghIdx], minHoughValue);
+          }
+        }
+      }
+    }
+
+    // Step 4: Normalize the Hough matrix and put it into imageData
+    const resultImageData = new ImageData(thetaSize, 2 * rhoMax + 1);
+
+    for (let y = 0; y < 2 * rhoMax + 1; y++) {
+      for (let x = 0; x < thetaSize; x++) {
+        const houghIdx = x + y * thetaSize;
+        const houghValue = houghMatrix[houghIdx];
+        let normalizedHoughValue =
+          ((houghValue - minHoughValue) / (maxHoughValue - minHoughValue)) * 255;
+        normalizedHoughValue = Math.max(0, Math.min(255, normalizedHoughValue));
+        const pixelIndex = (y * thetaSize + x) * 4;
+        resultImageData.data[pixelIndex] = normalizedHoughValue;
+        resultImageData.data[pixelIndex + 1] = normalizedHoughValue;
+        resultImageData.data[pixelIndex + 2] = normalizedHoughValue;
+        resultImageData.data[pixelIndex + 3] = 255;
+      }
+    }
+    // Step 5: Resize and display results
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = resultImageData.width;
+    tempCanvas.height = resultImageData.height;
+    const tempCtx = tempCanvas.getContext('2d') as CanvasRenderingContext2D;
+
+    tempCtx.putImageData(resultImageData, 0, 0);
+
+    const desiredWidth = Math.min(image.width, resultImageData.width);
+    const desiredHeight = Math.min(image.height, resultImageData.height);
+
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+
+    this.ctx.putImageData(image, 0, 0);
+
+    this.ctx.drawImage(
+      tempCanvas,
+      0,
+      0,
+      resultImageData.width,
+      resultImageData.height,
+      0,
+      0,
+      desiredWidth,
+      desiredHeight,
+    );
   }
 }

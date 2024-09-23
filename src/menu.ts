@@ -118,7 +118,7 @@ export default class Menu {
     });
     const edgeDetectionHoughBtn = document.getElementById('edge-hough-transform-btn')!;
     edgeDetectionHoughBtn.addEventListener('click', () => {
-      this.wasm.edgeDetectionHough();
+      this.transformation.edgeDetectionHough(2, false);
     });
 
     const binarisationManualBtn = document.getElementById('binarisation-manual-btn')!;
@@ -133,8 +133,7 @@ export default class Menu {
 
     const segmentationWatershedBtn = document.getElementById('segmentation-watershed-btn')!;
     segmentationWatershedBtn.addEventListener('click', () => {
-      this.wasm.gaussianBlur();
-      setTimeout(() => this.transformation.watershedByImmersion(), 400);
+      this.transformation.watershedByImmersion();
     });
 
     const characteristicsCornersBtn = document.getElementById('characteristics-corners-btn')!;
