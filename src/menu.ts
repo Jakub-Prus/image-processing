@@ -94,15 +94,15 @@ export default class Menu {
     });
     const edgeRobertsBtn = document.getElementById('edge-roberts-btn')!;
     edgeRobertsBtn.addEventListener('click', () => {
-      this.wasm.edgeDetectionRoberts();
+      this.transformation.edgeDetection('Roberts');
     });
     const edgePrewittBtn = document.getElementById('edge-prewitt-btn')!;
     edgePrewittBtn.addEventListener('click', () => {
-      this.wasm.edgeDetectionPrewitt();
+      this.transformation.edgeDetection('Prewitt');
     });
     const edgeSobelBtn = document.getElementById('edge-sobel-btn')!;
     edgeSobelBtn.addEventListener('click', () => {
-      this.wasm.edgeDetectionSobel();
+      this.transformation.edgeDetection('Sobel');
     });
     const edgeLaplacianBtn = document.getElementById('edge-laplacian-btn')!;
     edgeLaplacianBtn.addEventListener('click', () => {
@@ -148,6 +148,19 @@ export default class Menu {
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
         link.download = 'debug-image.png';
+        link.click();
+      } else {
+        console.error('Canvas element not found!');
+      }
+    });
+
+    const downloadImgBtn = document.getElementById('download-img-btn')!;
+    downloadImgBtn.addEventListener('click', () => {
+      const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+      if (canvas) {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'image.png';
         link.click();
       } else {
         console.error('Canvas element not found!');

@@ -585,7 +585,7 @@ export default class Transformation {
       resultImageData.data[i * 4] = cornerMap[i];
       resultImageData.data[i * 4 + 1] = cornerMap[i];
       resultImageData.data[i * 4 + 2] = cornerMap[i];
-      resultImageData.data[i * 4 + 3] = 255; // Full opacity
+      resultImageData.data[i * 4 + 3] = 255;
     }
 
     this.ctx.putImageData(resultImageData, 0, 0);
@@ -615,7 +615,6 @@ export default class Transformation {
       }
     }
 
-    // Normalize the kernel
     for (let i = 0; i < kernel.length; i++) {
       kernel[i] /= sum;
     }
@@ -796,7 +795,7 @@ export default class Transformation {
 
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
-    this.ctx.putImageData(image, 0, 0);
+    // this.ctx.putImageData(image, 0, 0);
 
     this.ctx.drawImage(
       tempCanvas,
@@ -809,5 +808,54 @@ export default class Transformation {
       desiredWidth,
       desiredHeight,
     );
+  }
+
+  edgeDetection(method: 'Roberts' | 'Prewitt' | 'Sobel') {
+    const imgData = this.mainCanvas.getImageData() as ImageData;
+    const kernels = {
+      Roberts: {
+        g_x: MATRICES.edge_roberts_x,
+        g_y: MATRICES.edge_roberts_y,
+      },
+      Prewitt: {
+        g_x: MATRICES.edge_prewitt_x,
+        g_y: MATRICES.edge_prewitt_y,
+      },
+      Sobel: {
+        g_x: MATRICES.edge_sobel_x,
+        g_y: MATRICES.edge_sobel_y,
+      },
+    };
+
+    if (!kernels[method]) {
+      throw new Error("Invalid method. Use 'Roberts', 'Prewitt', or 'Sobel'.");
+    }
+
+    const { g_x, g_y } = kernels[method];
+
+    // Apply horizontal and vertical gradient detection
+    const gradX = this.applyKernel(imgData, g_x, true) as number[];
+    const gradY = this.applyKernel(imgData, g_y, true) as number[];
+
+    const width = imgData.width;
+    const height = imgData.height;
+    const output = new ImageData(width, height);
+    const outputData = output.data;
+
+    // Calculate gradient magnitude
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const index = y * width + x;
+        const gradientMagnitude = Math.sqrt(gradX[index] ** 2 + gradY[index] ** 2);
+        const value = Math.min(255, gradientMagnitude);
+
+        outputData[index * 4] = value;
+        outputData[index * 4 + 1] = value;
+        outputData[index * 4 + 2] = value;
+        outputData[index * 4 + 3] = 255;
+      }
+    }
+
+    this.ctx.putImageData(output, 0, 0);
   }
 }

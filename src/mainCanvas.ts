@@ -25,7 +25,7 @@ export default class MainCanvas {
     this.canvas.height = 512;
 
     const img = new Image();
-    img.src = '/img/shapes_261x221.png';
+    img.src = '/img/testImg.png';
     img.crossOrigin = 'anonymous';
     img.onload = () => this.original(img);
   }

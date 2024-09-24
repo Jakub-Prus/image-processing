@@ -33,10 +33,6 @@
     <div class="workspace">
       <div class="menu tools">
         <div class="tools-row">
-          <img class="tool-icon" src="/icons/zoom-in.png" alt="Tool Zoom In" />
-          <img class="tool-icon" src="/icons/zoom-in.png" alt="Tool Zoom Out" />
-        </div>
-        <div class="tools-row">
           <button id="negative-filter-btn" class="tool-button">Negative</button>
         </div>
         <div class="tools-row">
@@ -100,7 +96,11 @@
         </div>
       </div>
 
-        <canvas id="canvas"></canvas>
+        
+        <div>
+          <canvas id="canvas"></canvas>
+          <button id="download-img-btn" class="tool-button">Download</button>
+        </div>
         <div>
           <canvas id="debug-canvas"></canvas>
           <button id="download-debug-img-btn" class="tool-button">Download</button>
