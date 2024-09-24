@@ -144,6 +144,14 @@ export default class Wasm {
         'rhoMax',
         'thetaSize',
       ]),
+      segmentationWatershed: transform(
+        TRANSFORM.segmentationWatershed,
+        imageData,
+        ctx,
+        mem,
+        instance,
+        ['width', 'height', 'offset', 'pixelMethod', 'hmin', 'hmax', 'thetaSize'],
+      ),
     });
   }
 
@@ -195,68 +203,15 @@ export default class Wasm {
       // @ts-ignore
       instance.exports[fn](byteSize, ...args);
 
-      // this.displayDebugData(
-      //   mem.subarray(byteSize * 6, byteSize * 7),
-      //   this.mainCanvas.canvas.width,
-      //   this.mainCanvas.canvas.height,
-      // );
+      this.displayDebugData(
+        mem.subarray(byteSize, byteSize * 2),
+        this.mainCanvas.canvas.width,
+        this.mainCanvas.canvas.height,
+      );
+      // } else {
 
-      // if (fn === TRANSFORM.edgeDetectionHough && options.thetaSize) {
-      //   const houghMatrixSize = Math.min(options.thetaSize * (options.rhoMax * 2 + 1));
-      //   console.log(houghMatrixSize);
-
-      //   const tempCanvas = document.createElement('canvas');
-      //   tempCanvas.width = options.rhoMax * 2 + 1;
-      //   tempCanvas.height = options.thetaSize;
-      //   const tempCtx = tempCanvas.getContext('2d')!;
-
-      //   const tempImageData = tempCtx.getImageData(
-      //     0,
-      //     0,
-      //     tempCanvas.width,
-      //     tempCanvas.height,
-      //   );
-      //   console.log('tempImageData', tempImageData)
-
-      //   tempImageData.data.set(mem.subarray(byteSize * 3, byteSize * 3 + houghMatrixSize));
-      //   tempCtx.putImageData(tempImageData, 0, 0);
-
-      //   console.log('Final img data hough: ', tempImageData);
-
-      //   // Calculate the scaling factor and new dimensions
-      //   const srcAspectRatio = tempCanvas.width / tempCanvas.height;
-      //   const dstAspectRatio = this.mainCanvas.canvas.width / this.mainCanvas.canvas.height;
-      //   let scale;
-      //   if (srcAspectRatio > dstAspectRatio) {
-      //     scale = this.mainCanvas.canvas.width / tempCanvas.width;
-      //   } else {
-      //     scale = this.mainCanvas.canvas.height / tempCanvas.height;
-      //   }
-      //   const newWidth = tempCanvas.width * scale;
-      //   const newHeight = tempCanvas.height * scale;
-
-      //   // Calculate the position to draw the tempCanvas
-      //   const x = (this.mainCanvas.canvas.width - newWidth) / 2;
-      //   const y = (this.mainCanvas.canvas.height - newHeight) / 2;
-
-      //   // Draw the tempCanvas onto the mainCanvas with scaling
-      //   ctx.drawImage(
-      //     tempCanvas,
-      //     x,
-      //     y,
-      //     newWidth,
-      //     newHeight
-      //   );
-
-        this.displayDebugData(
-          mem.subarray(byteSize, byteSize * 2),
-          this.mainCanvas.canvas.width,
-          this.mainCanvas.canvas.height,
-        );
-        // } else {
-
-        // Copy the response from the shared memory into the canvas imageData
-        data.set(mem.subarray(byteSize, byteSize * 2));
+      // Copy the response from the shared memory into the canvas imageData
+      data.set(mem.subarray(byteSize, byteSize * 2));
 
       console.log('Final img data: ', data);
       ctx.putImageData(imageData, 0, 0);
@@ -266,8 +221,8 @@ export default class Wasm {
 
   displayDebugData(data: Uint8Array, width: number, height: number): void {
     const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = this.mainCanvas.canvas.width;
+    canvas.height = this.mainCanvas.canvas.height;
     const ctx = canvas?.getContext('2d') as CanvasRenderingContext2D;
 
     if (!canvas || !ctx) {
@@ -313,7 +268,7 @@ export default class Wasm {
     await this.ensureInitialized();
     this.functions.negative();
   }
-  async gaussianBlur() {
+  async gaussianBlur(matrixSize = 3, sigma = 1.6) {
     await this.ensureInitialized();
     this.functions.convolve({
       width: this.mainCanvas.canvas.width,
@@ -322,9 +277,9 @@ export default class Wasm {
       pixelMethod: PIXELMETHOD.cyclicEdge,
       sizeOfKernel: 5,
       usedSlots: 1,
-      option: CONVOLVEOPTIONS.convolve,
+      option: CONVOLVEOPTIONS.gaussianBlur,
       sigma: 1.6,
-      slot3: getGaussianKernel(5, 1.6, true),
+      slot3: getGaussianKernel(matrixSize, sigma, true), //TODO add control over these varaibles from ui
     });
   }
 
@@ -430,7 +385,7 @@ export default class Wasm {
       usedSlots: 1,
       option: CONVOLVEOPTIONS.convolve,
       sigma: 1.6,
-      slot3: getGaussianKernel(5, 1.6, true),
+      slot3: getGaussianKernel(3, 0.76, true),
     });
 
     this.functions.edgeDetectionCanny({
@@ -489,8 +444,6 @@ export default class Wasm {
         this.mainCanvas.canvas.height * this.mainCanvas.canvas.height,
     );
     const thetaSize = 180 * density;
-    const houghMatrixFirstIndex = this.mainCanvas.canvas.width * this.mainCanvas.canvas.height * 2;
-    const houghMatrixSize = Math.floor(thetaSize * (rhoMax * 2 + 1));
 
     this.functions.edgeDetectionHough({
       width: this.mainCanvas.canvas.width,
@@ -503,4 +456,15 @@ export default class Wasm {
       thetaSize: thetaSize,
     });
   }
-}
+  async segmentationWatershed() {
+    await this.ensureInitialized();
+    this.functions.segmentationWatershed({
+      width: this.mainCanvas.canvas.width,
+      height: this.mainCanvas.canvas.height,
+      offset: OFFSET.blur,
+      pixelMethod: PIXELMETHOD.cyclicEdge,
+      hmin: 80,
+      hmax: 230,
+    });
+  }
+}       

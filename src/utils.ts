@@ -1,7 +1,3 @@
-const clamp = (value: number, min: number, max: number): number => {
-  return Math.min(Math.max(value, min), max);
-};
-
 const getGauss = (x: number, y: number, sigma: number): number => {
   const sigma2: number = sigma * sigma;
   const numerator: number = x * x + y * y;

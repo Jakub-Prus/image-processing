@@ -1,5 +1,4 @@
 import MainCanvas from './mainCanvas';
-import Brush from './brush';
 import Filter from './filter';
 import Menu from './menu';
 import Histogram from './histogram';

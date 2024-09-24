@@ -240,7 +240,6 @@ export default class Menu {
 
     channelButtons.forEach(button => {
       button.addEventListener('click', () => {
-        const channel = button.getAttribute('data-channel');
         const isClicked = button.classList.contains('clicked');
 
         if (isClicked) {
