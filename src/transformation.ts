@@ -858,4 +858,131 @@ export default class Transformation {
 
     this.ctx.putImageData(output, 0, 0);
   }
+
+  cannyEdgeDetection(
+    lowThreshold: number = 50,
+    highThreshold: number = 100,
+    sigma: number = 1.4,
+  ): void {
+    const width = this.mainCanvas.canvas.width;
+    const height = this.mainCanvas.canvas.height;
+    const image: ImageData = this.mainCanvas.getGrayscaleImageData();
+
+    // Step 1: Apply Gaussian Blur to reduce noise
+    const gaussianBlurKernel = this.createGaussianBlurKernel(5, sigma);
+    const blurredImage = this.applyKernel(image, gaussianBlurKernel, false) as ImageData;
+
+    // Step 2: Compute image gradients using Sobel operator
+    const Gx = this.applyKernel(blurredImage, MATRICES.edge_sobel_x, true) as number[];
+    const Gy = this.applyKernel(blurredImage, MATRICES.edge_sobel_y, true) as number[];
+
+    const gradientMagnitude: number[] = new Array(width * height).fill(0);
+    const gradientDirection: number[] = new Array(width * height).fill(0);
+
+    // Step 3: Calculate gradient magnitude and direction
+    for (let i = 0; i < width * height; i++) {
+      gradientMagnitude[i] = Math.sqrt(Gx[i] * Gx[i] + Gy[i] * Gy[i]);
+      gradientDirection[i] = Math.atan2(Gy[i], Gx[i]) * (180 / Math.PI); // Convert to degrees
+      if (gradientDirection[i] < 0) gradientDirection[i] += 180; // Map direction to [0, 180]
+    }
+
+    // Step 4: Non-Maximum Suppression
+    const nonMaxSuppressed = new Array(width * height).fill(0);
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x;
+        const direction = gradientDirection[i];
+
+        let neighbor1 = 0;
+        let neighbor2 = 0;
+
+        // Determine which neighbors to compare based on gradient direction
+        if ((direction >= 0 && direction < 22.5) || (direction >= 157.5 && direction <= 180)) {
+          neighbor1 = gradientMagnitude[i - 1]; // left
+          neighbor2 = gradientMagnitude[i + 1]; // right
+        } else if (direction >= 22.5 && direction < 67.5) {
+          neighbor1 = gradientMagnitude[i - width - 1]; // top-left
+          neighbor2 = gradientMagnitude[i + width + 1]; // bottom-right
+        } else if (direction >= 67.5 && direction < 112.5) {
+          neighbor1 = gradientMagnitude[i - width]; // top
+          neighbor2 = gradientMagnitude[i + width]; // bottom
+        } else if (direction >= 112.5 && direction < 157.5) {
+          neighbor1 = gradientMagnitude[i - width + 1]; // top-right
+          neighbor2 = gradientMagnitude[i + width - 1]; // bottom-left
+        }
+
+        // Suppress non-maximum values
+        if (gradientMagnitude[i] >= neighbor1 && gradientMagnitude[i] >= neighbor2) {
+          nonMaxSuppressed[i] = gradientMagnitude[i];
+        } else {
+          nonMaxSuppressed[i] = 0;
+        }
+      }
+    }
+
+    // Step 5: Double Thresholding
+    const strongEdges = new Array(width * height).fill(0);
+    const weakEdges = new Array(width * height).fill(0);
+
+    for (let i = 0; i < width * height; i++) {
+      if (nonMaxSuppressed[i] >= highThreshold) {
+        strongEdges[i] = 255;
+      } else if (nonMaxSuppressed[i] >= lowThreshold) {
+        weakEdges[i] = 50; // Mark weak edges with a lower intensity
+      }
+    }
+
+    // Step 6: Edge Tracking by Hysteresis
+    const finalEdges = new Array(width * height).fill(0);
+
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x;
+        if (strongEdges[i] === 255) {
+          finalEdges[i] = 255; // Strong edges stay
+        } else if (weakEdges[i] === 50) {
+          // If a weak edge is connected to a strong edge, promote it to strong
+          if (
+            strongEdges[i - 1] === 255 ||
+            strongEdges[i + 1] === 255 ||
+            strongEdges[i - width] === 255 ||
+            strongEdges[i + width] === 255 ||
+            strongEdges[i - width - 1] === 255 ||
+            strongEdges[i - width + 1] === 255 ||
+            strongEdges[i + width - 1] === 255 ||
+            strongEdges[i + width + 1] === 255
+          ) {
+            finalEdges[i] = 255;
+          }
+        }
+      }
+    }
+
+    // Step 7: Create the result image
+    const resultImageData = new ImageData(width, height);
+    for (let i = 0; i < width * height; i++) {
+      resultImageData.data[i * 4] = finalEdges[i];
+      resultImageData.data[i * 4 + 1] = finalEdges[i];
+      resultImageData.data[i * 4 + 2] = finalEdges[i];
+      resultImageData.data[i * 4 + 3] = 255;
+    }
+
+    // Display the result
+    this.ctx.putImageData(resultImageData, 0, 0);
+  }
+
+  negative(): void {
+    const imgData = this.mainCanvas.getImageData();
+    const width = imgData.width;
+    const height = imgData.height;
+    const data = imgData.data;
+
+    for (let i = 0; i < width * height * 4; i += 4) {
+      data[i] = 255 - data[i];
+      data[i + 1] = 255 - data[i + 1];
+      data[i + 2] = 255 - data[i + 2];
+    }
+
+    this.ctx.putImageData(imgData, 0, 0);
+  }
 }

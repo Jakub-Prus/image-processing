@@ -50,7 +50,7 @@ export default class Menu {
 
   setupEventListenersForToolsMenu() {
     const negativeBtn = document.getElementById('negative-filter-btn')!;
-    negativeBtn.addEventListener('click', () => this.wasm.negative());
+    negativeBtn.addEventListener('click', () => this.transformation.negative());
 
     const grayscaleBtn = document.getElementById('grayscale-filter-btn')!;
     grayscaleBtn.addEventListener('click', () => this.wasm.grayscale());
@@ -114,7 +114,7 @@ export default class Menu {
     });
     const edgeCannyBtn = document.getElementById('edge-canny-btn')!;
     edgeCannyBtn.addEventListener('click', () => {
-      this.wasm.edgeDetectionCanny();
+      this.transformation.cannyEdgeDetection(50, 100, 1.6);
     });
     const edgeDetectionHoughBtn = document.getElementById('edge-hough-transform-btn')!;
     edgeDetectionHoughBtn.addEventListener('click', () => {
