@@ -27,7 +27,14 @@ export default class MainCanvas {
     const img = new Image();
     img.src = '/img/testImg.png';
     img.crossOrigin = 'anonymous';
-    img.onload = () => this.original(img);
+    img.onload = () => {
+      this.original(img); 
+      this.originalImageData = this.ctx.getImageData(
+      0,
+      0,
+      this.canvas.width,
+      this.canvas.height,
+    );};
   }
 
   original(img: HTMLImageElement) {

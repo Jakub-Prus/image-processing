@@ -141,18 +141,18 @@ export default class Menu {
       this.transformation.harrisCornerDetection(1, 0.76, 0.05, 3000000);
     });
 
-    const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;
-    downloadDebugImgBtn.addEventListener('click', () => {
-      const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
-      if (canvas) {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = 'debug-image.png';
-        link.click();
-      } else {
-        console.error('Canvas element not found!');
-      }
-    });
+    // const downloadDebugImgBtn = document.getElementById('download-debug-img-btn')!;
+    // downloadDebugImgBtn.addEventListener('click', () => {
+    //   const canvas = document.getElementById('debug-canvas') as HTMLCanvasElement;
+    //   if (canvas) {
+    //     const link = document.createElement('a');
+    //     link.href = canvas.toDataURL('image/png');
+    //     link.download = 'debug-image.png';
+    //     link.click();
+    //   } else {
+    //     console.error('Canvas element not found!');
+    //   }
+    // });
 
     const downloadImgBtn = document.getElementById('download-img-btn')!;
     downloadImgBtn.addEventListener('click', () => {
@@ -277,6 +277,7 @@ export default class Menu {
     });
 
     brightnessRange.addEventListener('change', event => {
+      console.log('event', event)
       this.filter.corrections.brightness = parseFloat((event.target as HTMLInputElement).value);
       this.filter.applyCorrections();
     });
