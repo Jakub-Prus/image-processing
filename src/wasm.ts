@@ -66,7 +66,7 @@ export default class Wasm {
       module = await WebAssembly.instantiateStreaming(fetch('../build/debug.wasm'), importObject);
     } else {
       module = await WebAssembly.instantiate(
-        await (await fetch('../build/debug.wasm')).arrayBuffer(),
+        await(await fetch('../build/release.wasm')).arrayBuffer(),
         importObject,
       );
     }
@@ -133,6 +133,14 @@ export default class Wasm {
         'highThreshold',
         'slot3',
         'slot4',
+      ]),
+      binarization: transform(TRANSFORM.binarization, imageData, ctx, mem, instance, [
+        'width',
+        'height',
+        'offset',
+        'pixelMethod',
+        'binarizationMethod',
+        'threshold'
       ]),
       edgeDetectionHough: transform(TRANSFORM.edgeDetectionHough, imageData, ctx, mem, instance, [
         'width',
@@ -203,11 +211,11 @@ export default class Wasm {
       // @ts-ignore
       instance.exports[fn](byteSize, ...args);
 
-      this.displayDebugData(
-        mem.subarray(byteSize, byteSize * 2),
-        this.mainCanvas.canvas.width,
-        this.mainCanvas.canvas.height,
-      );
+      // this.displayDebugData(
+      //   mem.subarray(byteSize, byteSize * 2),
+      //   this.mainCanvas.canvas.width,
+      //   this.mainCanvas.canvas.height,
+      // );
       // } else {
 
       // Copy the response from the shared memory into the canvas imageData

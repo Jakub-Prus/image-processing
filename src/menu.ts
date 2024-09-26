@@ -106,7 +106,7 @@ export default class Menu {
     });
     const edgeLaplacianBtn = document.getElementById('edge-laplacian-btn')!;
     edgeLaplacianBtn.addEventListener('click', () => {
-      this.wasm.edgeDetectionSobel();
+      this.transformation.edgeDetection('Laplacian');
     });
     const edgeZeroBtn = document.getElementById('edge-zero-btn')!;
     edgeZeroBtn.addEventListener('click', () => {

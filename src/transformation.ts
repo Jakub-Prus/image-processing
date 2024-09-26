@@ -630,12 +630,13 @@ export default class Transformation {
     const width = imgData.width;
     const height = imgData.height;
     const srcData = imgData.data;
-    const outputArray = new Array(width, height);
+    const outputArray = new Array(width * height); // Fix the size of outputArray
     const output = new ImageData(width, height);
     const outputData = output.data;
 
     const kernelSize = Math.sqrt(kernel.length);
     const half = Math.floor(kernelSize / 2);
+    const isEvenKernel = kernelSize % 2 === 0;
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -644,12 +645,13 @@ export default class Transformation {
           b = 0,
           a = 0;
 
-        for (let ky = -half; ky <= half; ky++) {
-          for (let kx = -half; kx <= half; kx++) {
-            const kernelValue = kernel[(ky + half) * kernelSize + (kx + half)];
+        for (let ky = 0; ky < kernelSize; ky++) {
+          for (let kx = 0; kx < kernelSize; kx++) {
+            const kernelValue = kernel[ky * kernelSize + kx];
 
-            const px = x + kx;
-            const py = y + ky;
+            // Adjust px, py for even-sized kernels
+            const px = isEvenKernel ? x + kx : x + kx - half;
+            const py = isEvenKernel ? y + ky : y + ky - half;
 
             // Handle image bounds cases
             if (px >= 0 && px < width && py >= 0 && py < height) {
@@ -674,12 +676,14 @@ export default class Transformation {
         }
       }
     }
+
     if (resultArray) {
       return outputArray;
     } else {
       return output;
     }
   }
+  
 
   nonMaxSuppression(cornerCandidates: number[], width: number, height: number): number[] {
     const suppressed: number[] = new Array(width * height).fill(0);
@@ -810,54 +814,84 @@ export default class Transformation {
     );
   }
 
-  edgeDetection(method: 'Roberts' | 'Prewitt' | 'Sobel') {
+  edgeDetection(method: 'Roberts' | 'Prewitt' | 'Sobel' | 'Laplacian') {
     const imgData = this.mainCanvas.getImageData() as ImageData;
-    const kernels = {
-      Roberts: {
-        g_x: MATRICES.edge_roberts_x,
-        g_y: MATRICES.edge_roberts_y,
-      },
-      Prewitt: {
-        g_x: MATRICES.edge_prewitt_x,
-        g_y: MATRICES.edge_prewitt_y,
-      },
-      Sobel: {
-        g_x: MATRICES.edge_sobel_x,
-        g_y: MATRICES.edge_sobel_y,
-      },
-    };
-
-    if (!kernels[method]) {
-      throw new Error("Invalid method. Use 'Roberts', 'Prewitt', or 'Sobel'.");
-    }
-
-    const { g_x, g_y } = kernels[method];
-
-    // Apply horizontal and vertical gradient detection
-    const gradX = this.applyKernel(imgData, g_x, true) as number[];
-    const gradY = this.applyKernel(imgData, g_y, true) as number[];
-
     const width = imgData.width;
     const height = imgData.height;
     const output = new ImageData(width, height);
     const outputData = output.data;
-
-    // Calculate gradient magnitude
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const index = y * width + x;
-        const gradientMagnitude = Math.sqrt(gradX[index] ** 2 + gradY[index] ** 2);
-        const value = Math.min(255, gradientMagnitude);
-
-        outputData[index * 4] = value;
-        outputData[index * 4 + 1] = value;
-        outputData[index * 4 + 2] = value;
-        outputData[index * 4 + 3] = 255;
+  
+    if (method === 'Laplacian') {
+      // Laplacian-specific edge detection
+      const size = 3;  // Assuming a 3x3 Laplacian kernel
+      const laplacianMask = this.getLaplacianMask(size);
+      const laplacianResult = this.applyKernel(imgData, laplacianMask, true) as number[];
+  
+      // Applying the Laplacian result
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = y * width + x;
+          const value = Math.min(255, Math.abs(laplacianResult[index]));
+  
+          outputData[index * 4] = value;
+          outputData[index * 4 + 1] = value;
+          outputData[index * 4 + 2] = value;
+          outputData[index * 4 + 3] = 255;
+        }
+      }
+  
+    } else {
+      // Gradient-based edge detection for Roberts, Prewitt, Sobel
+      const kernels = {
+        Roberts: {
+          g_x: MATRICES.edge_roberts_x,
+          g_y: MATRICES.edge_roberts_y,
+        },
+        Prewitt: {
+          g_x: MATRICES.edge_prewitt_x,
+          g_y: MATRICES.edge_prewitt_y,
+        },
+        Sobel: {
+          g_x: MATRICES.edge_sobel_x,
+          g_y: MATRICES.edge_sobel_y,
+        },
+      };
+  
+      if (!kernels[method]) {
+        throw new Error("Invalid method. Use 'Roberts', 'Prewitt', 'Sobel', or 'Laplacian'.");
+      }
+  
+      const { g_x, g_y } = kernels[method];
+  
+      // Apply horizontal and vertical gradient detection
+      const gradX = this.applyKernel(imgData, g_x, true) as number[];
+      const gradY = this.applyKernel(imgData, g_y, true) as number[];
+  
+      // Calculate gradient magnitude
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = y * width + x;
+          const gradientMagnitude = Math.sqrt(gradX[index] ** 2 + gradY[index] ** 2);
+          const value = Math.min(255, gradientMagnitude);
+  
+          outputData[index * 4] = value;
+          outputData[index * 4 + 1] = value;
+          outputData[index * 4 + 2] = value;
+          outputData[index * 4 + 3] = 255;
+        }
       }
     }
-
+  
     this.ctx.putImageData(output, 0, 0);
   }
+  
+
+  getLaplacianMask(size: number) {
+    const mask = Array(size * size).fill(-1);
+    const center = Math.floor(size / 2) * size + Math.floor(size / 2);
+    mask[center] = size * size - 1;
+    return mask;
+  }  
 
   cannyEdgeDetection(
     lowThreshold: number = 50,
