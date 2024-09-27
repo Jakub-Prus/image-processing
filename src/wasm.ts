@@ -63,10 +63,10 @@ export default class Wasm {
 
     let module: any;
     if (typeof WebAssembly.instantiateStreaming !== 'undefined') {
-      module = await WebAssembly.instantiateStreaming(fetch('../build/debug.wasm'), importObject);
+      module = await WebAssembly.instantiateStreaming(fetch('./release.wasm'), importObject);
     } else {
       module = await WebAssembly.instantiate(
-        await(await fetch('../build/release.wasm')).arrayBuffer(),
+        await(await fetch('./release.wasm')).arrayBuffer(),
         importObject,
       );
     }
