@@ -3,16 +3,13 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 
 export default defineConfig({
-  plugins: [
-    wasm(), // Enable WASM support
-    topLevelAwait(), // Allow top-level await
-  ],
+  plugins: [wasm(), topLevelAwait()],
   build: {
-    target: 'esnext', // Ensure WASM is supported in modern browsers
+    target: 'esnext',
   },
   resolve: {
     alias: {
-      '@wasm': '/path/to/your/wasm/files', // Ensure correct path for WASM
+      '@wasm': '/build/',
     },
   },
 });
